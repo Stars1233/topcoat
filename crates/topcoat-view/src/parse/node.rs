@@ -1,3 +1,5 @@
+use proc_macro2::TokenStream;
+use quote::{ToTokens, quote};
 use syn::{
     LitStr,
     parse::{Parse, ParseStream},
@@ -19,5 +21,15 @@ impl Parse for Node {
         } else {
             Err(syn::Error::new(input.span(), "expected view node"))
         }
+    }
+}
+
+impl ToTokens for Node {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        match self {
+            Self::Text(text) => quote! { ::topcoat::view::Node::Text(#text.into()) },
+            Self::Element(element) => quote! { ::topcoat::view::Node::Element(#element) },
+        }
+        .to_tokens(tokens);
     }
 }

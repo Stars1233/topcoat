@@ -3,8 +3,13 @@ name = "topcoat"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+dom = ["dep:topcoat-dom"]
+
 [dependencies]
+topcoat-dom = { workspace = true, optional = true }
 topcoat-macro.workspace = true
+topcoat-view.workspace = true
 
 [lints]
 workspace = true

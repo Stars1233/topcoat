@@ -1,10 +1,14 @@
 fn main() {
-    topcoat::view! {
+    let rendered = topcoat::dom::render(&topcoat::view! {
         html {
             head {
-                title { "pip" }
+                title { "hello world" }
+            }
+            body {
+                "hi"
+                b { "carl" }
             }
         }
-    };
-    println!("Hello, world!");
+    });
+    println!("{}", rendered);
 }

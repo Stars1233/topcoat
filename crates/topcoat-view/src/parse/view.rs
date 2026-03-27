@@ -1,3 +1,5 @@
+use proc_macro2::TokenStream;
+use quote::{ToTokens, quote};
 use syn::parse::{Parse, ParseStream};
 
 use crate::parse::Node;
@@ -17,5 +19,15 @@ impl Parse for View {
                 children
             },
         })
+    }
+}
+
+impl ToTokens for View {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let nodes = &self.nodes;
+        quote! {
+            ::topcoat::view::View::new(vec![#(#nodes),*])
+        }
+        .to_tokens(tokens);
     }
 }

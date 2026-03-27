@@ -1,3 +1,5 @@
+use proc_macro2::TokenStream;
+use quote::{ToTokens, quote};
 use syn::{
     Ident, LitStr, Token,
     parse::{Parse, ParseStream},
@@ -27,6 +29,17 @@ impl ParseOption for Attribute {
     }
 }
 
+impl ToTokens for Attribute {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let name = self.name.to_string();
+        let value = &self.value;
+        quote! {
+            ::topcoat::view::Attribute::new(#name.into(), #value.into())
+        }
+        .to_tokens(tokens)
+    }
+}
+
 pub struct Attributes {
     items: Vec<Attribute>,
 }
@@ -38,5 +51,15 @@ impl Parse for Attributes {
             items.push(attribute);
         }
         Ok(Self { items })
+    }
+}
+
+impl ToTokens for Attributes {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let items = &self.items;
+        quote! {
+            ::topcoat::view::Attributes::new(vec![#(#items),*])
+        }
+        .to_tokens(tokens);
     }
 }
