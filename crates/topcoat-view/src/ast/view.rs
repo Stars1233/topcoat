@@ -102,9 +102,9 @@ impl ToTokens for ViewWriter {
         }
 
         quote! {{
-            let writer = ::topcoat::view::ViewWriter::with_capacity(#static_len);
+            let mut writer = ::topcoat::view::ViewWriter::with_capacity(#static_len);
             #(#push_ops)*
-            writer
+            writer.finish()
         }}
         .to_tokens(tokens);
     }

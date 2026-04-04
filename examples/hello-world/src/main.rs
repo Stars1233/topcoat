@@ -1,14 +1,21 @@
 fn main() {
-    let rendered = topcoat::view! {
+    let dynamic = if 5 > 6 {
+        topcoat::view! { "hi" }
+    } else {
+        topcoat::view! { "bye" }
+    };
+
+    let content = topcoat::view! {
         html {
             head {
                 title { "hello world" }
             }
             body {
-                "hi"
+                (dynamic)
+                " "
                 b class="cool" { "carl & friends" }
             }
         }
     };
-    println!("{}", rendered);
+    println!("{}", content);
 }

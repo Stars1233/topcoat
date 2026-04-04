@@ -10,6 +10,11 @@ impl View {
     pub fn new(buf: impl Into<Cow<'static, str>>) -> Self {
         Self { buf: buf.into() }
     }
+
+    #[inline]
+    pub fn as_str(&self) -> &str {
+        &self.buf
+    }
 }
 
 impl fmt::Display for View {
