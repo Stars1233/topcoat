@@ -7,7 +7,7 @@ fn main() {
                 "carl" => b { "hi carl" },
                 "joey" => b { "hi joey" },
                 "julien" => b { "im julien" },
-                _ => {},
+                _ => "test",
             }
         }
     };

@@ -16,6 +16,7 @@ pub(crate) struct ViewWriterMatch<'a> {
     parent: &'a mut ViewWriter,
     expr: &'a Expr,
     arms: TokenStream,
+    static_len: usize,
 }
 
 impl<'a> ViewWriterMatch<'a> {
@@ -24,6 +25,7 @@ impl<'a> ViewWriterMatch<'a> {
             parent,
             expr,
             arms: TokenStream::new(),
+            static_len: 0,
         }
     }
 
@@ -43,6 +45,7 @@ impl Drop for ViewWriterMatch<'_> {
         let arms = &self.arms;
         let tokens = quote! { match #expr { #arms } };
         tokens.to_tokens(&mut self.parent.tokens);
+        self.parent.static_len += self.static_len;
     }
 }
 
@@ -89,6 +92,10 @@ impl Drop for ViewWriterMatchArm<'_, '_> {
             quote! { #pat => { #tokens } }
         };
         arm.to_tokens(&mut self.parent.arms);
-        self.parent.parent.static_len += self.writer.static_len;
+        if self.parent.static_len == 0 {
+            self.parent.static_len = self.writer.static_len;
+        } else {
+            self.parent.static_len = self.parent.static_len.min(self.writer.static_len);
+        }
     }
 }
