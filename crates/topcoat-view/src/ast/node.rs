@@ -34,6 +34,8 @@ impl Parse for Node {
             Ok(Self::Element(input.parse()?))
         } else if NodeExpr::peek(input) {
             Ok(Self::ViewExpr(input.parse()?))
+        } else if NodeIf::peek(input) {
+            Ok(Self::NodeIf(input.parse()?))
         } else {
             Err(syn::Error::new(input.span(), "expected view node"))
         }

@@ -5,7 +5,7 @@ use syn::{
 
 use crate::{
     ast::{NodeBlock, parse_option::ParseOption},
-    view_writer::ViewWriter,
+    view_writer::{ViewWriter, ViewWriterIf},
 };
 
 pub struct NodeIf {
@@ -17,7 +17,11 @@ pub struct NodeIf {
 
 impl NodeIf {
     pub fn write(&self, writer: &mut ViewWriter) {
-        let writer = writer.begin_if(&self.cond);
+        let mut writer = writer.begin_if(&self.cond);
+        self.then_branch.write(&mut writer);
+        if let Some(else_branch) = self.else_branch.as_ref() {
+            else_branch.write(writer);
+        }
     }
 }
 
@@ -32,6 +36,12 @@ impl Parse for NodeIf {
     }
 }
 
+impl ParseOption for NodeIf {
+    fn peek(input: ParseStream) -> bool {
+        input.peek(Token![if])
+    }
+}
+
 pub enum NodeElse {
     ElseIf {
         else_token: Token![else],
@@ -41,6 +51,16 @@ pub enum NodeElse {
         else_token: Token![else],
         then_branch: NodeBlock,
     },
+}
+
+impl NodeElse {
+    fn write(&self, writer: ViewWriterIf<'_>) {
+        let mut writer = writer.begin_else();
+        match self {
+            Self::ElseIf { node_if, .. } => node_if.write(&mut writer),
+            Self::Else { then_branch, .. } => then_branch.write(&mut writer),
+        }
+    }
 }
 
 impl Parse for NodeElse {
