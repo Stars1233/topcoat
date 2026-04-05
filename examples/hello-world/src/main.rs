@@ -8,12 +8,17 @@ fn main() {
             }
             body {
                 for name in names {
-                    div {
-                        "hello " (name)
+                    if name.len() < 5 {
+                        div {
+                            "hello " (name)
+                        }
+                    } else {
+                        "im " (name)
                     }
                 }
             }
         }
     };
+
     println!("{}", content);
 }

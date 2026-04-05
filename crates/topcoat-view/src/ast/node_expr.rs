@@ -14,7 +14,7 @@ pub struct NodeExpr {
 impl NodeExpr {
     pub fn write(&self, writer: &mut ViewWriter) {
         let expr = &self.expr;
-        writer.push_expr(quote! { ::topcoat::view::View::as_str(&#expr) });
+        writer.push_expr(quote! { &#expr });
     }
 }
 

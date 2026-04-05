@@ -24,6 +24,25 @@ impl fmt::Display for View {
     }
 }
 
+pub trait Fragment {
+    fn as_str(&self) -> &str;
+}
+
+impl<T> Fragment for T
+where
+    T: AsRef<str>,
+{
+    fn as_str(&self) -> &str {
+        self.as_ref()
+    }
+}
+
+impl Fragment for &View {
+    fn as_str(&self) -> &str {
+        &self.buf
+    }
+}
+
 #[derive(Default)]
 pub struct ViewWriter {
     buf: String,
@@ -43,20 +62,12 @@ impl ViewWriter {
     }
 
     #[inline]
-    pub fn push_str(&mut self, string: &str) {
-        self.buf.push_str(string);
+    pub fn push_fragment(&mut self, fragment: impl Fragment) {
+        self.buf.push_str(fragment.as_str());
     }
 
     #[inline]
     pub fn finish(self) -> View {
         View::new(self.buf)
-    }
-}
-
-impl fmt::Write for ViewWriter {
-    #[inline]
-    fn write_str(&mut self, s: &str) -> fmt::Result {
-        self.buf.push_str(s);
-        Ok(())
     }
 }
