@@ -9,7 +9,6 @@ fn main() {
             <body>
                 for name in ["carl", "julien"] {
                     if name.len() < 5 {
-                <div/>
                         <div>
                             "hello " (name)
                         </div>

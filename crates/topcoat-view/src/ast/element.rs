@@ -115,6 +115,16 @@ impl Parse for Element {
         while !input.is_empty() && !ClosingTag::peek(input) {
             children.push(input.parse()?);
         }
+
+        if input.is_empty() {
+            return Err(syn::Error::new(
+                input.span(),
+                format!(
+                    "missing closing tag for opening tag `{}`",
+                    &opening_tag.name
+                ),
+            ));
+        }
         let closing_tag: ClosingTag = input.parse()?;
         if closing_tag.name != opening_tag.name {
             return Err(syn::Error::new(
