@@ -1,3 +1,4 @@
+use quote::quote;
 use syn::{
     ExprLet, Token,
     parse::{Parse, ParseStream},
@@ -12,7 +13,8 @@ pub struct NodeLet {
 
 impl NodeLet {
     pub(crate) fn write(&self, writer: &mut ViewWriter) {
-        writer.push_expr_let(&self.expr_let);
+        let expr_let = &self.expr_let;
+        writer.push_raw(quote! { #expr_let; });
     }
 }
 

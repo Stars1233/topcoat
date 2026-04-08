@@ -2,7 +2,6 @@ mod view_writer_for_loop;
 mod view_writer_if;
 mod view_writer_match;
 
-use syn::ExprLet;
 pub(crate) use view_writer_if::*;
 pub(crate) use view_writer_match::*;
 
@@ -56,8 +55,8 @@ impl ViewWriter {
         quote! { writer.push_fragment(#expr); }.to_tokens(&mut self.tokens);
     }
 
-    pub fn push_expr_let(&mut self, expr_let: &ExprLet) {
-        quote! { #expr_let; }.to_tokens(&mut self.tokens);
+    pub fn push_raw(&mut self, tokens: TokenStream) {
+        tokens.to_tokens(&mut self.tokens);
     }
 }
 

@@ -1,5 +1,6 @@
+use quote::quote;
 use syn::{
-    Expr, Pat, Token,
+    Expr, ExprBreak, ExprContinue, Pat, Token,
     parse::{Parse, ParseStream},
 };
 
@@ -38,5 +39,61 @@ impl Parse for NodeForLoop {
 impl ParseOption for NodeForLoop {
     fn peek(input: ParseStream) -> bool {
         input.peek(Token![for])
+    }
+}
+
+pub struct NodeContinue {
+    pub expr_continue: ExprContinue,
+    pub semi_token: Token![;],
+}
+
+impl NodeContinue {
+    pub(crate) fn write(&self, writer: &mut ViewWriter) {
+        let expr_continue = &self.expr_continue;
+        let semi_token = &self.semi_token;
+        writer.push_raw(quote! { #expr_continue #semi_token });
+    }
+}
+
+impl Parse for NodeContinue {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        Ok(Self {
+            expr_continue: input.parse()?,
+            semi_token: input.parse()?,
+        })
+    }
+}
+
+impl ParseOption for NodeContinue {
+    fn peek(input: ParseStream) -> bool {
+        input.peek(Token![continue])
+    }
+}
+
+pub struct NodeBreak {
+    pub expr_break: ExprBreak,
+    pub semi_token: Token![;],
+}
+
+impl NodeBreak {
+    pub(crate) fn write(&self, writer: &mut ViewWriter) {
+        let expr_break = &self.expr_break;
+        let semi_token = &self.semi_token;
+        writer.push_raw(quote! { #expr_break #semi_token });
+    }
+}
+
+impl Parse for NodeBreak {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        Ok(Self {
+            expr_break: input.parse()?,
+            semi_token: input.parse()?,
+        })
+    }
+}
+
+impl ParseOption for NodeBreak {
+    fn peek(input: ParseStream) -> bool {
+        input.peek(Token![break])
     }
 }

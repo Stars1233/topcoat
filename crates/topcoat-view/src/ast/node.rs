@@ -1,10 +1,14 @@
 use syn::{
     LitStr,
     parse::{Parse, ParseStream},
+    spanned::Spanned,
 };
 
 use crate::{
-    ast::{Element, NodeBlock, NodeExpr, NodeForLoop, NodeIf, NodeLet, NodeMatch, ParseOption},
+    ast::{
+        Element, NodeBlock, NodeBreak, NodeContinue, NodeExpr, NodeForLoop, NodeIf, NodeLet,
+        NodeMatch, ParseOption,
+    },
     output::ViewWriter,
 };
 
@@ -15,6 +19,8 @@ pub enum Node {
     If(NodeIf),
     Let(NodeLet),
     ForLoop(NodeForLoop),
+    Continue(NodeContinue),
+    Break(NodeBreak),
     Match(NodeMatch),
     Block(NodeBlock),
 }
@@ -28,6 +34,8 @@ impl Node {
             Self::If(inner) => inner.write(writer),
             Self::Let(inner) => inner.write(writer),
             Self::ForLoop(inner) => inner.write(writer),
+            Self::Continue(inner) => inner.write(writer),
+            Self::Break(inner) => inner.write(writer),
             Self::Match(inner) => inner.write(writer),
             Self::Block(inner) => inner.write(writer),
         }
@@ -36,24 +44,40 @@ impl Node {
 
 impl Parse for Node {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        if input.peek(LitStr) {
-            Ok(Self::Text(input.parse()?))
+        let result = if input.peek(LitStr) {
+            Self::Text(input.parse()?)
         } else if Element::peek(input) {
-            Ok(Self::Element(input.parse()?))
+            Self::Element(input.parse()?)
         } else if NodeExpr::peek(input) {
-            Ok(Self::Expr(input.parse()?))
+            Self::Expr(input.parse()?)
         } else if NodeIf::peek(input) {
-            Ok(Self::If(input.parse()?))
+            Self::If(input.parse()?)
         } else if NodeLet::peek(input) {
-            Ok(Self::Let(input.parse()?))
+            Self::Let(input.parse()?)
         } else if NodeForLoop::peek(input) {
-            Ok(Self::ForLoop(input.parse()?))
+            Self::ForLoop(input.parse()?)
+        } else if NodeContinue::peek(input) {
+            Self::Continue(input.parse()?)
+        } else if NodeBreak::peek(input) {
+            Self::Break(input.parse()?)
         } else if NodeMatch::peek(input) {
-            Ok(Self::Match(input.parse()?))
+            Self::Match(input.parse()?)
         } else if NodeBlock::peek(input) {
-            Ok(Self::Block(input.parse()?))
+            Self::Block(input.parse()?)
         } else {
-            Err(syn::Error::new(input.span(), "expected view node"))
+            return Err(syn::Error::new(input.span(), "expected view node"));
+        };
+
+        match result {
+            Self::Continue(inner) => Err(syn::Error::new(
+                inner.expr_continue.span(),
+                "`continue` is currently not supported",
+            )),
+            Self::Break(inner) => Err(syn::Error::new(
+                inner.expr_break.span(),
+                "`break` is currently not supported",
+            )),
+            _ => Ok(result),
         }
     }
 }
