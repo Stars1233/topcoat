@@ -1,5 +1,9 @@
-#[topcoat::component]
-fn button() {}
+// #[topcoat::component]
+// fn button(x: i32, y: i32, z: i32, child: topcoat::View) -> topcoat::view::View {
+//     topcoat::view! {
+//         <button>(child)</button>
+//     }
+// }
 
 fn main() {
     let content = topcoat::view! {
@@ -7,19 +11,10 @@ fn main() {
             <head>
                 <title>"hello world"</title>
             </head>
-            <body>
-                for name in ["carl", "julien"] {
-                    if name.len() < 5 {
-                        let name = name.to_uppercase();
-                        <div>
-                            "hello " (name)
-                            <input />
-                        </div>
-                    } else {
-                        <br>
-                        "im " (name)
-                    }
-                }
+            <body id="test">
+                [button id="5"]
+                    "click me"
+                [/button]
             </body>
         </html>
     };

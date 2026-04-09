@@ -1,4 +1,5 @@
 mod attribute;
+mod component;
 mod element;
 mod node;
 mod node_block;
@@ -11,6 +12,7 @@ mod parse_option;
 mod view;
 
 pub use attribute::*;
+pub use component::*;
 pub use element::*;
 pub use node::*;
 pub use node_block::*;

@@ -6,8 +6,8 @@ use syn::{
 
 use crate::{
     ast::{
-        Element, NodeBlock, NodeBreak, NodeContinue, NodeExpr, NodeForLoop, NodeIf, NodeLet,
-        NodeMatch, ParseOption,
+        Component, Element, NodeBlock, NodeBreak, NodeContinue, NodeExpr, NodeForLoop, NodeIf,
+        NodeLet, NodeMatch, ParseOption,
     },
     output::ViewWriter,
 };
@@ -15,6 +15,7 @@ use crate::{
 pub enum Node {
     Text(LitStr),
     Element(Element),
+    Component(Component),
     Expr(NodeExpr),
     If(NodeIf),
     Let(NodeLet),
@@ -30,6 +31,7 @@ impl Node {
         match self {
             Self::Text(inner) => writer.push_escaped(&inner.value()),
             Self::Element(inner) => inner.write(writer),
+            Self::Component(inner) => inner.write(writer),
             Self::Expr(inner) => inner.write(writer),
             Self::If(inner) => inner.write(writer),
             Self::Let(inner) => inner.write(writer),
@@ -48,6 +50,8 @@ impl Parse for Node {
             Self::Text(input.parse()?)
         } else if Element::peek(input) {
             Self::Element(input.parse()?)
+        } else if Component::peek(input) {
+            Self::Component(input.parse()?)
         } else if NodeExpr::peek(input) {
             Self::Expr(input.parse()?)
         } else if NodeIf::peek(input) {
