@@ -67,7 +67,7 @@ impl ToTokens for ComponentItem {
             }
 
             impl #generics ::topcoat::component::Component for #ident #generics {
-                async fn render(self) -> ::topcoat::view::View {
+                async fn render(self) -> ::topcoat::View {
                     #item
                     #ident(#(#args),*).await
                 }

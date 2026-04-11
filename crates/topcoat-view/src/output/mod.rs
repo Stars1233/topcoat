@@ -66,7 +66,7 @@ impl ToTokens for ViewWriter {
 
         // Optimized path: The view has no dynamic content. We can construct it as a &'static str.
         if self.tokens.is_empty() {
-            quote! { ::topcoat::view::View::new(#static_segment) }.to_tokens(tokens);
+            quote! { ::topcoat::View::new(#static_segment) }.to_tokens(tokens);
             return;
         }
 
@@ -76,7 +76,7 @@ impl ToTokens for ViewWriter {
             quote! { writer.push_fragment(#static_segment); }
         });
         quote! {{
-            let mut writer = ::topcoat::view::ViewWriter::with_capacity(#capacity);
+            let mut writer = ::topcoat::ViewWriter::with_capacity(#capacity);
             #buffer
             #final_segment
             writer.finish()
