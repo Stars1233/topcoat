@@ -1,6 +1,8 @@
+use std::fmt::Debug;
+
 use http::Method;
 
-use crate::{Pattern, Route, Routes};
+use crate::{Pattern, Route, Routes, TryIntoPattern};
 
 #[derive(Debug, Default, Clone)]
 pub struct Router {
@@ -12,8 +14,8 @@ impl Router {
         Default::default()
     }
 
-    pub fn get(&mut self, pattern: impl Into<Pattern>) -> &mut Self {
-        self.route(Method::GET, pattern.into())
+    pub fn get(&mut self, pattern: impl TryIntoPattern) -> &mut Self {
+        self.route(Method::GET, pattern.try_into_pattern().unwrap())
     }
 
     fn route(&mut self, method: Method, pattern: Pattern) -> &mut Self {

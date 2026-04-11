@@ -1,8 +1,8 @@
-use std::{borrow::Cow, collections::HashMap};
+use std::collections::HashMap;
 
 use http::Method;
 
-use crate::route::RouteId;
+use crate::{Path, route::RouteId};
 
 #[derive(Debug, Default, Clone)]
 pub(crate) struct StaticRoutes {
@@ -14,31 +14,24 @@ impl StaticRoutes {
         Default::default()
     }
 
-    pub fn insert(
-        &mut self,
-        method: Method,
-        path: impl Into<Cow<'static, str>>,
-        route_id: RouteId,
-    ) {
+    pub fn insert(&mut self, method: Method, path: Path<'static>, route_id: RouteId) {
         self.routes
-            .insert(StaticRouteKey::new(method, path.into()), route_id);
+            .insert(StaticRouteKey::new(method, path), route_id);
     }
 
-    pub fn get(&self, method: Method, path: &str) -> Option<RouteId> {
-        self.routes
-            .get(&StaticRouteKey::new(method, path.into()))
-            .copied()
+    pub fn get(&self, method: Method, path: Path) -> Option<RouteId> {
+        self.routes.get(&StaticRouteKey::new(method, path)).copied()
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct StaticRouteKey<'a> {
     method: Method,
-    path: Cow<'a, str>,
+    path: Path<'a>,
 }
 
 impl<'a> StaticRouteKey<'a> {
-    fn new(method: Method, path: Cow<'a, str>) -> Self {
+    fn new(method: Method, path: Path<'a>) -> Self {
         Self { method, path }
     }
 }

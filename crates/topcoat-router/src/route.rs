@@ -31,9 +31,14 @@ impl Routes {
     }
 
     pub fn insert(&mut self, route: Route) {
-        let id = RouteId::new(self.routes.len());
+        let route_id = RouteId::new(self.routes.len());
+        if let Some(path) = route.pattern.to_path() {
+            self.static_routes
+                .insert(route.method.clone(), path, route_id);
+        } else {
+            self.dynamic_routes
+                .insert(route.method.clone(), &route.pattern, route_id);
+        }
         self.routes.push(route);
-        self.static_routes
-            .insert(route.method, route.pattern, route_id);
     }
 }

@@ -50,7 +50,7 @@ impl Pattern {
         self.dynamic_segments().next().is_some()
     }
 
-    pub fn to_path(&self) -> Option<Path<'static>> {
+    pub fn as_path(&self) -> Option<Path> {
         self.is_static().then(|| Path::new(self.string.clone()))
     }
 }
@@ -67,18 +67,12 @@ pub enum ParsePatternError {
     LeadingSlash,
 }
 
-pub trait TryIntoPattern {
+trait TryIntoPattern {
     fn try_into_pattern(self) -> Result<Pattern, ParsePatternError>;
 }
 
 impl TryIntoPattern for &'static str {
     fn try_into_pattern(self) -> Result<Pattern, ParsePatternError> {
-        Pattern::new(self.into())
-    }
-}
-
-impl TryIntoPattern for String {
-    fn try_into_pattern(self) -> Result<Pattern, ParsePatternError> {
-        Pattern::new(self.into())
+        Self::new(self.into())
     }
 }

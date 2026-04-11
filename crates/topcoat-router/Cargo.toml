@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 http.workspace = true
 matchit.workspace = true
+thiserror.workspace = true
 
 [lints]
 workspace = true
