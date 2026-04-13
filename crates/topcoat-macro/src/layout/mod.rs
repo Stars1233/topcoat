@@ -1,27 +1,23 @@
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::{
-    ItemFn, LitStr,
+    ItemFn,
     parse::{Parse, ParseStream},
 };
 
-pub struct PageAttr {
-    path: Option<LitStr>,
-}
+pub struct LayoutAttr {}
 
-impl Parse for PageAttr {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        Ok(Self {
-            path: input.peek(LitStr).then(|| input.parse()).transpose()?,
-        })
+impl Parse for LayoutAttr {
+    fn parse(_: ParseStream) -> syn::Result<Self> {
+        Ok(Self {})
     }
 }
 
-pub struct PageItem {
+pub struct LayoutItem {
     item: ItemFn,
 }
 
-impl Parse for PageItem {
+impl Parse for LayoutItem {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
             item: input.parse()?,
@@ -29,27 +25,23 @@ impl Parse for PageItem {
     }
 }
 
-pub struct Page(PageAttr, PageItem);
+pub struct Layout(LayoutAttr, LayoutItem);
 
-impl Page {
-    pub fn new(attr: PageAttr, item: PageItem) -> Self {
+impl Layout {
+    pub fn new(attr: LayoutAttr, item: LayoutItem) -> Self {
         Self(attr, item)
     }
 }
 
-impl ToTokens for Page {
+impl ToTokens for Layout {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        let path = self.0.path.as_ref();
         let item = &self.1.item;
         let ident = &item.sig.ident;
 
-        let path = path.unwrap();
-
         quote! {
             #[allow(non_upper_case_globals)]
-            const #ident: ::topcoat::router::page::Page = ::topcoat::router::page::Page::new(
+            const #ident: ::topcoat::router::layout::Layout = ::topcoat::router::layout::Layout::new(
                 file!(),
-                #path,
                 || {
                     #item
                     Box::pin(#ident())

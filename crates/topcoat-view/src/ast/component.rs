@@ -12,12 +12,12 @@ use crate::{
 
 pub enum Component {
     Normal {
-        opening_tag: OpeningTag,
+        opening_tag: ComponentOpeningTag,
         children: Vec<Node>,
-        closing_tag: ClosingTag,
+        closing_tag: ComponentClosingTag,
     },
     SelfClosing {
-        tag: SelfClosingTag,
+        tag: ComponentSelfClosingTag,
     },
 }
 
@@ -73,7 +73,7 @@ impl Parse for Component {
 
         if content.peek(Token![/]) {
             return Ok(Self::SelfClosing {
-                tag: SelfClosingTag {
+                tag: ComponentSelfClosingTag {
                     bracket_token,
                     name,
                     attributes,
@@ -82,14 +82,14 @@ impl Parse for Component {
             });
         }
 
-        let opening_tag = OpeningTag {
+        let opening_tag = ComponentOpeningTag {
             bracket_token,
             name,
             attributes,
         };
 
         let mut children = Vec::new();
-        while !input.is_empty() && !ClosingTag::peek(input) {
+        while !input.is_empty() && !ComponentClosingTag::peek(input) {
             children.push(input.parse()?);
         }
 
@@ -102,7 +102,7 @@ impl Parse for Component {
                 ),
             ));
         }
-        let closing_tag: ClosingTag = input.parse()?;
+        let closing_tag: ComponentClosingTag = input.parse()?;
         if closing_tag.name != opening_tag.name {
             return Err(syn::Error::new(
                 closing_tag.name.span(),
@@ -126,13 +126,13 @@ impl ParseOption for Component {
     }
 }
 
-pub struct OpeningTag {
+pub struct ComponentOpeningTag {
     pub bracket_token: Bracket,
     pub name: Ident,
     pub attributes: Attributes,
 }
 
-impl Parse for OpeningTag {
+impl Parse for ComponentOpeningTag {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let content;
         Ok(Self {
@@ -143,14 +143,14 @@ impl Parse for OpeningTag {
     }
 }
 
-pub struct SelfClosingTag {
+pub struct ComponentSelfClosingTag {
     pub bracket_token: Bracket,
     pub name: Ident,
     pub attributes: Attributes,
     pub slash: Token![/],
 }
 
-impl Parse for SelfClosingTag {
+impl Parse for ComponentSelfClosingTag {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let content;
         Ok(Self {
@@ -162,13 +162,13 @@ impl Parse for SelfClosingTag {
     }
 }
 
-pub struct ClosingTag {
+pub struct ComponentClosingTag {
     pub bracket_token: Bracket,
     pub slash: Token![/],
     pub name: Ident,
 }
 
-impl Parse for ClosingTag {
+impl Parse for ComponentClosingTag {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let content;
         Ok(Self {
@@ -179,7 +179,7 @@ impl Parse for ClosingTag {
     }
 }
 
-impl ParseOption for ClosingTag {
+impl ParseOption for ComponentClosingTag {
     fn peek(input: ParseStream) -> bool {
         fn inner(input: ParseStream) -> syn::Result<()> {
             let content;

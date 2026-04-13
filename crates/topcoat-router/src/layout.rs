@@ -3,13 +3,13 @@ use std::pin::Pin;
 use topcoat_view::runtime::View;
 
 #[derive(Clone)]
-pub struct Page {
+pub struct Layout {
     file: &'static str,
     path: &'static str,
     render: fn() -> Pin<Box<dyn Future<Output = View> + Send>>,
 }
 
-impl Page {
+impl Layout {
     pub const fn new(
         file: &'static str,
         path: &'static str,
