@@ -34,6 +34,7 @@ impl Parse for ComponentItem {
 impl ToTokens for ComponentItem {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let item = &self.item;
+        let vis = &item.vis;
         let ident = &item.sig.ident;
         let generics = &item.sig.generics;
         // let props_struct_ident = Ident::new(
@@ -62,8 +63,8 @@ impl ToTokens for ComponentItem {
 
         quote! {
             #[allow(non_camel_case_types)]
-            struct #ident #generics {
-                #(#fields),*
+            #vis struct #ident #generics {
+                #(#vis #fields),*
             }
 
             impl #generics ::topcoat::component::Component for #ident #generics {

@@ -1,7 +1,8 @@
 use quote::quote;
 use syn::{
-    Ident, Token, bracketed,
+    Path, Token, bracketed,
     parse::{Parse, ParseStream},
+    spanned::Spanned,
     token::Bracket,
 };
 
@@ -22,10 +23,10 @@ pub enum Component {
 }
 
 impl Component {
-    pub fn name(&self) -> &Ident {
+    pub fn path(&self) -> &Path {
         match self {
-            Self::Normal { opening_tag, .. } => &opening_tag.name,
-            Self::SelfClosing { tag } => &tag.name,
+            Self::Normal { opening_tag, .. } => &opening_tag.path,
+            Self::SelfClosing { tag } => &tag.path,
         }
     }
 
@@ -44,7 +45,7 @@ impl Component {
     }
 
     pub(crate) fn write(&self, writer: &mut ViewWriter) {
-        let name = self.name();
+        let name = self.path();
         let fields = self.attributes().items.iter().map(|item| {
             let name = &item.name;
             let value = &item.value;
@@ -68,23 +69,23 @@ impl Parse for Component {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let content;
         let bracket_token = bracketed!(content in input);
-        let name: Ident = content.parse()?;
+        let path: Path = content.parse()?;
         let attributes: Attributes = content.parse()?;
 
         if content.peek(Token![/]) {
             return Ok(Self::SelfClosing {
                 tag: ComponentSelfClosingTag {
                     bracket_token,
-                    name,
+                    path,
                     attributes,
-                    slash: input.parse()?,
+                    slash: content.parse()?,
                 },
             });
         }
 
         let opening_tag = ComponentOpeningTag {
             bracket_token,
-            name,
+            path,
             attributes,
         };
 
@@ -98,17 +99,18 @@ impl Parse for Component {
                 input.span(),
                 format!(
                     "missing closing tag for opening tag `{}`",
-                    &opening_tag.name
+                    &opening_tag.path.segments.last().unwrap().ident
                 ),
             ));
         }
         let closing_tag: ComponentClosingTag = input.parse()?;
-        if closing_tag.name != opening_tag.name {
+        if closing_tag.path != opening_tag.path {
             return Err(syn::Error::new(
-                closing_tag.name.span(),
+                closing_tag.path.span(),
                 format!(
                     "closing tag `{}` does not match opening tag `{}`",
-                    closing_tag.name, opening_tag.name
+                    &closing_tag.path.segments.last().unwrap().ident,
+                    &opening_tag.path.segments.last().unwrap().ident
                 ),
             ));
         }
@@ -128,7 +130,7 @@ impl ParseOption for Component {
 
 pub struct ComponentOpeningTag {
     pub bracket_token: Bracket,
-    pub name: Ident,
+    pub path: Path,
     pub attributes: Attributes,
 }
 
@@ -137,7 +139,7 @@ impl Parse for ComponentOpeningTag {
         let content;
         Ok(Self {
             bracket_token: bracketed!(content in input),
-            name: content.parse()?,
+            path: content.parse()?,
             attributes: content.parse()?,
         })
     }
@@ -145,7 +147,7 @@ impl Parse for ComponentOpeningTag {
 
 pub struct ComponentSelfClosingTag {
     pub bracket_token: Bracket,
-    pub name: Ident,
+    pub path: Path,
     pub attributes: Attributes,
     pub slash: Token![/],
 }
@@ -155,7 +157,7 @@ impl Parse for ComponentSelfClosingTag {
         let content;
         Ok(Self {
             bracket_token: bracketed!(content in input),
-            name: content.parse()?,
+            path: content.parse()?,
             attributes: content.parse()?,
             slash: content.parse()?,
         })
@@ -165,7 +167,7 @@ impl Parse for ComponentSelfClosingTag {
 pub struct ComponentClosingTag {
     pub bracket_token: Bracket,
     pub slash: Token![/],
-    pub name: Ident,
+    pub path: Path,
 }
 
 impl Parse for ComponentClosingTag {
@@ -174,7 +176,7 @@ impl Parse for ComponentClosingTag {
         Ok(Self {
             bracket_token: bracketed!(content in input),
             slash: content.parse()?,
-            name: content.parse()?,
+            path: content.parse()?,
         })
     }
 }

@@ -1,8 +1,11 @@
+mod broadcast_server;
+
 use clap::Args;
 use console::style;
 use indicatif::{ProgressBar, ProgressStyle};
 use notify::{RecursiveMode, Watcher, recommended_watcher};
 use std::process::Stdio;
+use tokio::net::TcpListener;
 use tokio::process::{Child, Command};
 use tokio::sync::mpsc;
 use tokio::time::{Duration, Instant};
@@ -12,6 +15,12 @@ pub struct DevCommand {}
 
 impl DevCommand {
     pub async fn run(self) {
+        let listener = TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("failed to open dev server port");
+        let dev_url = format!("ws://{}", listener.local_addr().unwrap());
+        tokio::spawn(broadcast_server::run(listener));
+
         eprintln!();
         eprintln!(
             "  {} {}",
@@ -21,7 +30,7 @@ impl DevCommand {
         eprintln!("  {}", style("watching ./src for changes").dim());
         eprintln!();
 
-        let mut child = build_and_run(true).await;
+        let mut child = build_and_run(true, &dev_url).await;
 
         let (tx, mut rx) = mpsc::channel::<notify::Result<notify::Event>>(16);
         let mut watcher = recommended_watcher(move |event| {
@@ -62,7 +71,7 @@ impl DevCommand {
                     if let Some(c) = &mut child {
                         kill_child(c).await;
                     }
-                    child = build_and_run(false).await;
+                    child = build_and_run(false, &dev_url).await;
                 }
             }
         }
@@ -82,7 +91,7 @@ fn make_spinner(message: &str) -> ProgressBar {
     spinner
 }
 
-async fn build_and_run(initial: bool) -> Option<Child> {
+async fn build_and_run(initial: bool, dev_url: &str) -> Option<Child> {
     let label = if initial { "Building" } else { "Rebuilding" };
     let spinner = make_spinner(label);
 
@@ -142,6 +151,7 @@ async fn build_and_run(initial: bool) -> Option<Child> {
 
     Some(
         Command::new(exe)
+            .env("TOPCOAT_DEV_URL", dev_url)
             .stdout(Stdio::inherit())
             .stderr(Stdio::inherit())
             .stdin(Stdio::inherit())

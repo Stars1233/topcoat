@@ -15,10 +15,12 @@ path = "src/bin/cargo_topcoat.rs"
 [dependencies]
 clap = { workspace = true, features = ["derive"] }
 console.workspace = true
+futures-util.workspace = true
 indicatif.workspace = true
 notify.workspace = true
 serde_json.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "process", "signal", "io-util", "time", "sync"] }
+tokio-tungstenite.workspace = true
 
 [lints]
 workspace = true

@@ -25,6 +25,7 @@ topcoat-view = { path = "crates/topcoat-view" }
 axum = "0.8.8"
 clap = "4.6.0"
 console = "0.16"
+futures-util = "0.3"
 heck = "0.5.0"
 http = "1.4.0"
 indicatif = "0.18"
@@ -35,4 +36,5 @@ serde_json = "1"
 syn = "2.0.117"
 thiserror = "2.0.18"
 tokio = "1.51.1"
+tokio-tungstenite = "0.29"
 

@@ -1,4 +1,4 @@
-use topcoat::{View, axum::routing::get, layout, page, router::layout::Slot, view};
+use topcoat::{View, layout, page, router::layout::Slot, view};
 
 #[layout]
 async fn layout(slot: Slot) -> View {
@@ -7,6 +7,7 @@ async fn layout(slot: Slot) -> View {
         <html>
             <head>
                 <title>"hello world"</title>
+                [topcoat::dev::script /]
             </head>
             <body>
                 <nav>
@@ -27,7 +28,7 @@ async fn layout(slot: Slot) -> View {
 
 #[page("/")]
 async fn home_page() -> View {
-    view! { "kek" }
+    view! { "home" }
 }
 
 #[page("/about")]
@@ -50,8 +51,8 @@ async fn main() {
 
     let axum_router = axum::Router::new()
         .merge(topcoat_router)
-        .route("/axum", get(async || {}));
+        .route("/axum", axum::routing::get(async || {}));
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    axum::serve(listener, axum_router).await.unwrap();
+    topcoat::serve(listener, axum_router).await.unwrap();
 }

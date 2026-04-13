@@ -1,3 +1,8 @@
+extern crate self as topcoat;
+
+pub mod dev;
+mod serve;
+
 pub use topcoat_macro::*;
 
 pub mod component {
@@ -12,6 +17,4 @@ pub mod router {
 
 pub use topcoat_view::runtime::*;
 
-pub mod axum {
-    pub use axum::*;
-}
+pub use serve::serve;
