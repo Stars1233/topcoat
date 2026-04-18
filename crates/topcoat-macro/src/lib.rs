@@ -45,10 +45,8 @@ pub fn layout(attr: TokenStream, item: TokenStream) -> TokenStream {
     quote! { #layout }.into()
 }
 
-#[proc_macro_attribute]
-pub fn segment(attr: TokenStream, item: TokenStream) -> TokenStream {
-    let attr = syn::parse_macro_input!(attr as segment::SegmentAttr);
-    let item = syn::parse_macro_input!(item as segment::SegmentItem);
-    let segment = segment::Segment::new(attr, item);
+#[proc_macro]
+pub fn segment(tokens: TokenStream) -> TokenStream {
+    let segment = syn::parse_macro_input!(segment as segment::Segment);
     quote! { #segment }.into()
 }

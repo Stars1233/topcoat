@@ -1,10 +1,8 @@
 mod _group;
-
-#[segment]
 mod about;
 
 use topcoat::{
-    router::{Slot, layout, page, segment},
+    router::{Slot, layout, page},
     view::{View, view},
 };
 
