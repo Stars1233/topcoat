@@ -5,8 +5,6 @@ use syn::{
     parse::{Parse, ParseStream},
 };
 
-use crate::quote_option::QuoteOption;
-
 pub struct LayoutAttr {
     path: Option<LitStr>,
 }
