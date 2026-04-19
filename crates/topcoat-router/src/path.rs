@@ -102,6 +102,8 @@ impl Path {
     /// This is used to determine which layouts apply to a given page — a layout
     /// at `"/settings"` matches any page whose path starts with `/settings`.
     ///
+    /// Group segments are included in the comparison.
+    ///
     /// # Examples
     ///
     /// ```
