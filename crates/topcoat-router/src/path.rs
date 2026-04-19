@@ -28,6 +28,13 @@ impl Path {
             .inner
     }
 
+    pub fn starts_with(&self, other: &Path) -> bool {
+        if self.inner.len() > other.inner.len() {
+            return false;
+        }
+        return self.segments().zip(other.segments()).all(|(a, b)| a == b);
+    }
+
     pub fn as_str(&self) -> &str {
         &self.inner
     }

@@ -1,6 +1,6 @@
 use std::{borrow::Cow, collections::HashMap};
 
-use crate::file_router::canonical_module_path;
+use crate::file::canonical_module_path;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum SegmentKind {
