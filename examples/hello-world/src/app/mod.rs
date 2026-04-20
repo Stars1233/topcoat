@@ -24,7 +24,7 @@ async fn layout(slot: Slot) -> View {
                     <a href="/">"home"</a>
                     <span>" | "</span>
                     <a href="/about">"about"</a>
-                    <span>" | "</span>
+                    <span class=("test")>" | "</span>
                     <a href="/contact">"contact"</a>
                 </nav>
                 <hr>
@@ -38,6 +38,8 @@ async fn layout(slot: Slot) -> View {
             <br>
             <span>"bye"</span>
         },
+        _ =>
+            <span>"rest"</span>
 
             }
 
@@ -55,7 +57,7 @@ async fn layout(slot: Slot) -> View {
                 <div>"bye"</div>
             }
 
-            for kek in pip {
+            for kek in [1, 2, 3] {
             <div>"hi"</div>
         }
             </body>

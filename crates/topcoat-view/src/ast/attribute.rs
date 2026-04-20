@@ -96,9 +96,8 @@ impl crate::pretty::PrettyPrint for AttributeValue {
             Self::LitStr(inner) => inner.pretty_print(printer),
             Self::Expr { paren, expr } => {
                 use crate::pretty::{BreakMode, Delim};
-                paren.pretty_print(printer, None, |printer| {
-                    todo!();
-                    // expr.pretty_print(printer);
+                paren.pretty_print(printer, Some(BreakMode::Inconsistent), |printer| {
+                    expr.pretty_print(printer);
                 });
             }
         }

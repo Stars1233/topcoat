@@ -59,7 +59,7 @@ impl crate::pretty::PrettyPrint for NodeMatch {
         self.match_token.pretty_print(printer);
 
         " ".pretty_print(printer);
-        // todo
+        self.expr.pretty_print(printer);
         " ".pretty_print(printer);
 
         self.brace_token
@@ -125,6 +125,12 @@ impl crate::pretty::PrettyPrint for NodeMatchArm {
         // todo
         " ".pretty_print(printer);
         self.fat_arrow_token.pretty_print(printer);
+        if let Some((if_token, expr)) = &self.guard {
+            " ".pretty_print(printer);
+            if_token.pretty_print(printer);
+            " ".pretty_print(printer);
+            expr.pretty_print(printer);
+        }
         " ".pretty_print(printer);
         self.body.pretty_print(printer);
         if !self.body.is_block() {

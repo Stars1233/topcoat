@@ -22,7 +22,6 @@ impl PrettyPrint for syn::Expr {
             .spawn()
             .expect("failed to run rustfmt on nested rust expression");
         let mut stdin = command.stdin.as_ref().expect("command must has stdin");
-        println!("{}", printer.current_indent());
         for _ in 0..printer.current_indent() {
             stdin.write_all("const _: () = {".as_bytes()).unwrap();
         }

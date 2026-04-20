@@ -101,7 +101,13 @@ impl crate::pretty::PrettyPrint for ElementName {
         match self {
             Self::Ident(inner) => inner.pretty_print(printer),
             Self::LitStr(inner) => inner.pretty_print(printer),
-            Self::Expr { .. } => todo!(),
+            Self::Expr { paren, expr } => {
+                use crate::pretty::{BreakMode, Delim};
+
+                paren.pretty_print(printer, Some(BreakMode::Inconsistent), |printer| {
+                    expr.pretty_print(printer);
+                });
+            }
         }
     }
 }
