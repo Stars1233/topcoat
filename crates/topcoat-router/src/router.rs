@@ -1,6 +1,6 @@
 use axum::routing::get;
 
-use crate::{Layout, Page};
+use crate::{Layout, Layouts, Page, Pages};
 
 /// The core routing primitive that collects [`Page`]s and [`Layout`]s,
 /// matches layouts to pages by path prefix, and converts into an
@@ -34,14 +34,17 @@ use crate::{Layout, Page};
 /// ```
 #[derive(Default)]
 pub struct Router {
-    pages: Vec<Page>,
-    layouts: Vec<Layout>,
+    pages: Pages,
+    layouts: Layouts,
 }
 
 impl Router {
     /// Creates an empty router with no pages or layouts.
     pub fn new() -> Self {
-        Default::default()
+        Self {
+            pages: Pages::new(),
+            layouts: Layouts::new(),
+        }
     }
 
     /// Returns `true` if no pages or layouts have been registered.
@@ -52,14 +55,14 @@ impl Router {
     /// Registers a [`Page`]. Order doesn't matter — layout matching
     /// is based on path prefixes, not registration order.
     pub fn page(mut self, page: Page) -> Self {
-        self.pages.push(page);
+        self.pages.register(page);
         self
     }
 
     /// Registers a [`Layout`]. A layout applies to every page whose
     /// path starts with the layout's path prefix.
     pub fn layout(mut self, layout: Layout) -> Self {
-        self.layouts.push(layout);
+        self.layouts.register(layout);
         self
     }
 
@@ -85,12 +88,7 @@ impl From<Router> for axum::Router {
         let mut result = axum::Router::new();
 
         for page in value.pages {
-            let mut layouts: Vec<_> = value
-                .layouts
-                .iter()
-                .filter(|layout| page.path().starts_with(layout.path()))
-                .cloned()
-                .collect();
+            let mut layouts: Vec<_> = value.layouts.for_path(page.path()).cloned().collect();
             layouts.sort_by_key(|layout| layout.path().len());
 
             result = result.route(

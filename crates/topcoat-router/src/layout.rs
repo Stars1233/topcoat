@@ -1,4 +1,4 @@
-use std::{borrow::Cow, pin::Pin};
+use std::{borrow::Cow, collections::HashMap, pin::Pin};
 
 use topcoat_view::runtime::View;
 
@@ -15,7 +15,7 @@ pub type Slot = Pin<Box<dyn Future<Output = View> + Send>>;
 /// When multiple layouts match a page, they nest from most-specific (innermost)
 /// to least-specific (outermost). For example, layouts at `/` and `/settings`
 /// both match `/settings/profile`, rendering as: root → settings → page.
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Layout {
     /// The path prefix this layout applies to.
     path: Cow<'static, Path>,
@@ -45,3 +45,110 @@ impl Layout {
 
 #[cfg(feature = "discover")]
 inventory::collect!(Layout);
+
+/// Registry of [`Layout`] declarations, keyed by router path.
+#[doc(hidden)]
+#[derive(Debug, Default, Clone)]
+pub(crate) struct Layouts {
+    layouts: HashMap<Cow<'static, Path>, Layout>,
+}
+
+impl Layouts {
+    /// Creates an empty registry.
+    pub fn new() -> Self {
+        Default::default()
+    }
+
+    /// Registers a layout for a router path. Panics on duplicates.
+    pub fn register(&mut self, layout: Layout) {
+        if let Some(existing) = self.layouts.insert(layout.path.clone(), layout) {
+            panic!("multiple layouts registered for path `{}`", existing.path)
+        }
+    }
+
+    /// Returns an iterator over all layouts whose path prefix matches the given path.
+    pub fn for_path(&self, path: &Path) -> impl Iterator<Item = &Layout> {
+        self.layouts
+            .values()
+            .filter(|layout| path.starts_with(layout.path()))
+    }
+
+    /// Returns `true` if no layout has been registered.
+    pub fn is_empty(&self) -> bool {
+        self.layouts.is_empty()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn dummy_render(slot: Slot) -> Pin<Box<dyn Future<Output = View> + Send>> {
+        Box::pin(async move { slot.await })
+    }
+
+    fn layout(path: &'static str) -> Layout {
+        Layout::new(Cow::Borrowed(Path::new(path)), dummy_render)
+    }
+
+    // ── Layout ──
+
+    #[test]
+    fn layout_path() {
+        let l = layout("/settings");
+        assert_eq!(l.path(), Path::new("/settings"));
+    }
+
+    // ── Layouts ──
+
+    #[test]
+    fn layouts_new_is_empty() {
+        let layouts = Layouts::new();
+        assert!(layouts.is_empty());
+    }
+
+    #[test]
+    fn layouts_register() {
+        let mut layouts = Layouts::new();
+        layouts.register(layout("/"));
+        assert!(!layouts.is_empty());
+    }
+
+    #[test]
+    #[should_panic(expected = "multiple layouts registered for path")]
+    fn layouts_register_duplicate_panics() {
+        let mut layouts = Layouts::new();
+        layouts.register(layout("/settings"));
+        layouts.register(layout("/settings"));
+    }
+
+    #[test]
+    fn layouts_for_path_root_matches_all() {
+        let mut layouts = Layouts::new();
+        layouts.register(layout("/"));
+        layouts.register(layout("/settings"));
+
+        let matched: Vec<_> = layouts.for_path(Path::new("/settings/profile")).collect();
+        assert_eq!(matched.len(), 2);
+    }
+
+    #[test]
+    fn layouts_for_path_filters_non_matching() {
+        let mut layouts = Layouts::new();
+        layouts.register(layout("/settings"));
+        layouts.register(layout("/admin"));
+
+        let matched: Vec<_> = layouts.for_path(Path::new("/settings/profile")).collect();
+        assert_eq!(matched.len(), 1);
+        assert_eq!(matched[0].path(), Path::new("/settings"));
+    }
+
+    #[test]
+    fn layouts_for_path_no_match() {
+        let mut layouts = Layouts::new();
+        layouts.register(layout("/admin"));
+
+        let matched: Vec<_> = layouts.for_path(Path::new("/settings")).collect();
+        assert!(matched.is_empty());
+    }
+}

@@ -127,6 +127,12 @@ impl Path {
     pub fn len(&self) -> usize {
         self.inner.len()
     }
+
+    /// Returns `true` if `self` has no path segments, i.e. `self` is the root path `/`.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 impl Display for Path {

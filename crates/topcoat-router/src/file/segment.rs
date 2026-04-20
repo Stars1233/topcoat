@@ -80,7 +80,7 @@ inventory::collect!(Segment);
 /// URL contribution.
 #[doc(hidden)]
 #[derive(Debug, Default, Clone)]
-pub struct Segments {
+pub(crate) struct Segments {
     segments: HashMap<&'static str, Segment>,
 }
 
@@ -101,11 +101,6 @@ impl Segments {
     pub fn get(&self, path: &str) -> Option<&Segment> {
         self.segments.get(path)
     }
-
-    /// Returns `true` if no segments have been registered.
-    pub fn is_empty(&self) -> bool {
-        self.segments.is_empty()
-    }
 }
 
 #[cfg(test)]
@@ -121,7 +116,6 @@ mod tests {
         let mut segments = Segments::new();
         segments.register("foo", test_segment());
 
-        assert!(!segments.is_empty());
         let seg = segments.get("foo").unwrap();
         assert_eq!(seg.file(), "test.rs");
         assert_eq!(seg.kind(), Some(&SegmentKind::Static));
@@ -131,7 +125,6 @@ mod tests {
     #[test]
     fn get_missing_returns_none() {
         let segments = Segments::new();
-        assert!(segments.is_empty());
         assert!(segments.get("nope").is_none());
     }
 
