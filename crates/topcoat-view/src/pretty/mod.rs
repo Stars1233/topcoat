@@ -7,6 +7,7 @@ mod span;
 mod text;
 mod token;
 mod trivia;
+mod visitor;
 
 pub use delim::*;
 pub use r#macro::*;
@@ -15,8 +16,32 @@ pub use ring_buffer::*;
 pub use span::*;
 pub use token::*;
 pub use trivia::*;
+use visitor::*;
 
-use syn::parse::Parse;
+use syn::{parse::Parse, visit::Visit};
+
+pub fn pretty_print_rust_str(input: &str) -> Result<String, Vec<syn::Error>> {
+    let mut output = String::new();
+
+    let file = syn::parse_file(input).map_err(|error| vec![error])?;
+    let mut visitor = Visitor::default();
+    visitor.visit_file(&file);
+
+    if !visitor.errors.is_empty() {
+        return Err(visitor.errors.into());
+    }
+
+    let mut current_index = 0;
+    for replacement in visitor.replacements {
+        output.push_str(&input[current_index..replacement.start]);
+        output.push_str(&replacement.replacement);
+        current_index = replacement.end;
+    }
+
+    output.push_str(&input[current_index..]);
+
+    Ok(output)
+}
 
 pub fn pretty_print_str<T>(
     source_text: &str,

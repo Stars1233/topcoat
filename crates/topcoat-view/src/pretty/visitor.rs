@@ -1,5 +1,6 @@
 use syn::{spanned::Spanned, visit::Visit};
-use topcoat_view::pretty::{MARGIN, Macro, pretty_print_str};
+
+use super::{MARGIN, Macro, pretty_print_str};
 
 pub(super) struct Replace {
     pub(super) start: usize,
@@ -47,7 +48,7 @@ impl<'ast> Visit<'ast> for Visitor {
         let initial_indent = self.indent;
 
         let result = match name.to_string().as_ref() {
-            "view" => Some(pretty_print_str::<Macro<topcoat_view::ast::View>>(
+            "view" => Some(pretty_print_str::<Macro<crate::ast::View>>(
                 &source_text,
                 initial_space,
                 initial_indent,

@@ -6,7 +6,7 @@ edition = "2024"
 [features]
 axum = ["dep:axum"]
 parsing = []
-pretty = ["parsing"]
+pretty = ["parsing", "syn/visit"]
 
 [dependencies]
 axum = { workspace = true, optional = true }
