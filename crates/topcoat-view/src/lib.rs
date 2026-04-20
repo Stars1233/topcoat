@@ -1,6 +1,6 @@
-#[cfg(feature = "parse")]
+#[cfg(feature = "parsing")]
 pub mod ast;
-#[cfg(feature = "parse")]
+#[cfg(feature = "parsing")]
 mod output;
 #[cfg(feature = "pretty")]
 pub mod pretty;

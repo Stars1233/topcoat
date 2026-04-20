@@ -70,6 +70,13 @@ impl ParseOption for NodeContinue {
     }
 }
 
+#[cfg(feature = "pretty")]
+impl crate::pretty::PrettyPrint for NodeContinue {
+    fn pretty_print(&self, printer: &mut crate::pretty::Printer<'_>) {
+        // TODO
+    }
+}
+
 pub struct NodeBreak {
     pub expr_break: ExprBreak,
     pub semi_token: Token![;],
