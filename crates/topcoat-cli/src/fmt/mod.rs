@@ -1,6 +1,6 @@
 mod error;
 
-use std::{collections::BTreeSet, io::Read, path::PathBuf};
+use std::{collections::BTreeSet, io::Read, path::PathBuf, time::Instant};
 
 use clap::Args;
 
@@ -21,6 +21,7 @@ pub struct FmtCommand {
 
 impl FmtCommand {
     pub async fn run(&self) {
+        let start = Instant::now();
         let result: Result<(), Error> = async {
             let mut files = BTreeSet::new();
 
@@ -58,7 +59,7 @@ impl FmtCommand {
             } else {
                 eprintln!(
                     "{}",
-                    style(format!("successfully formatted {count} files")).green()
+                    style(format!("successfully formatted {count} files in {:.0?}", start.elapsed())).green()
                 )
             }
             Ok(())
