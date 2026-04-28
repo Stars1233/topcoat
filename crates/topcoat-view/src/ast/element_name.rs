@@ -3,7 +3,9 @@ use std::fmt::Display;
 use proc_macro2::Span;
 use quote::quote;
 use syn::{
-    Expr, Ident, LitStr, parenthesized,
+    Expr, Ident, LitStr,
+    ext::IdentExt,
+    parenthesized,
     parse::{Parse, ParseStream},
     spanned::Spanned,
     token::Paren,
@@ -92,7 +94,7 @@ impl Parse for ElementName {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let lookahead = input.lookahead1();
         if lookahead.peek(Ident) {
-            Ok(Self::Ident(input.parse()?))
+            Ok(Self::Ident(input.call(Ident::parse_any)?))
         } else if lookahead.peek(LitStr) {
             Ok(Self::LitStr(input.parse()?))
         } else if lookahead.peek(Paren) {
@@ -121,5 +123,54 @@ impl crate::pretty::PrettyPrint for ElementName {
                 });
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parse(source: &str) -> ElementName {
+        syn::parse_str(source).unwrap()
+    }
+
+    #[test]
+    fn ident_name_returns_string_name() {
+        let name = parse("div");
+        assert_eq!(name.string_name().as_deref(), Some("div"));
+        assert!(name.expr().is_none());
+    }
+
+    #[test]
+    fn lit_str_name_returns_string_name() {
+        let name = parse(r#""my-tag""#);
+        assert_eq!(name.string_name().as_deref(), Some("my-tag"));
+        assert!(name.expr().is_none());
+    }
+
+    #[test]
+    fn expression_name_has_no_string_name() {
+        let name = parse("(tag)");
+        assert!(name.string_name().is_none());
+        assert!(name.expr().is_some());
+    }
+
+    #[test]
+    fn is_void_element_only_matches_known_void_idents() {
+        for tag in [
+            "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source",
+            "track", "wbr",
+        ] {
+            assert!(parse(tag).is_void_element(), "{tag} should be void");
+        }
+        assert!(!parse("div").is_void_element());
+    }
+
+    #[test]
+    fn is_void_element_ignores_string_and_expr_names() {
+        // Even spelling a void tag as a string literal or expression must not
+        // count as void.
+        assert!(!parse(r#""br""#).is_void_element());
+        assert!(!parse("(br)").is_void_element());
     }
 }

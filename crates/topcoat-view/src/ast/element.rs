@@ -183,3 +183,51 @@ impl crate::pretty::PrettyPrint for Element {
         printer.scan_end();
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parse(source: &str) -> Element {
+        syn::parse_str(source).unwrap()
+    }
+
+    fn parse_err(source: &str) -> String {
+        match syn::parse_str::<Element>(source) {
+            Ok(_) => panic!("expected parse error for `{source}`"),
+            Err(err) => err.to_string(),
+        }
+    }
+
+    #[test]
+    fn parses_normal_element() {
+        let element = parse("<div></div>");
+        assert!(matches!(element, Element::Normal { .. }));
+        assert_eq!(element.name().string_name().as_deref(), Some("div"));
+        assert!(element.attributes().is_empty());
+        assert!(element.children().is_empty());
+    }
+
+    #[test]
+    fn parses_void_element_without_closing_tag() {
+        let element = parse("<br>");
+        assert!(matches!(element, Element::Void { .. }));
+        assert!(element.children().is_empty());
+    }
+
+    #[test]
+    fn parses_nested_children() {
+        let element = parse(r#"<div><p>"hi"</p></div>"#);
+        assert_eq!(element.children().len(), 1);
+    }
+
+    #[test]
+    fn missing_closing_tag_is_rejected() {
+        assert!(parse_err("<div>").contains("missing closing tag"));
+    }
+
+    #[test]
+    fn mismatched_closing_tag_is_rejected() {
+        assert!(parse_err("<div></span>").contains("does not match"));
+    }
+}

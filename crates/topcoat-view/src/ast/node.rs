@@ -119,3 +119,57 @@ impl crate::pretty::PrettyPrint for Node {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parse(source: &str) -> Node {
+        syn::parse_str(source).unwrap()
+    }
+
+    fn parse_err(source: &str) -> String {
+        match syn::parse_str::<Node>(source) {
+            Ok(_) => panic!("expected parse error for `{source}`"),
+            Err(err) => err.to_string(),
+        }
+    }
+
+    #[test]
+    fn dispatches_each_variant() {
+        assert!(matches!(parse(r#""hi""#), Node::Text(_)));
+        assert!(matches!(parse("<!DOCTYPE html>"), Node::DocumentType(_)));
+        assert!(matches!(parse("<br>"), Node::Element(_)));
+        assert!(matches!(parse("[foo /]"), Node::Component(_)));
+        assert!(matches!(parse("(value)"), Node::Expr(_)));
+        assert!(matches!(parse(r#"if a { "x" }"#), Node::If(_)));
+        assert!(matches!(parse(r#"let a = 1;"#), Node::Let(_)));
+        assert!(matches!(parse(r#"for x in xs { (x) }"#), Node::ForLoop(_)));
+        assert!(matches!(
+            parse(r#"match v { _ => "x", }"#),
+            Node::Match(_)
+        ));
+        assert!(matches!(parse(r#"{ "x" }"#), Node::Block(_)));
+    }
+
+    #[test]
+    fn break_in_loop_is_rejected() {
+        assert!(parse_err("break;").contains("`break` is currently not supported"));
+    }
+
+    #[test]
+    fn continue_in_loop_is_rejected() {
+        assert!(parse_err("continue;").contains("`continue` is currently not supported"));
+    }
+
+    #[test]
+    fn unrecognized_token_is_rejected() {
+        assert!(parse_err("@").contains("expected view node"));
+    }
+
+    #[test]
+    fn is_block_only_true_for_block_variant() {
+        assert!(parse(r#"{ "x" }"#).is_block());
+        assert!(!parse(r#""x""#).is_block());
+    }
+}

@@ -1,7 +1,9 @@
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::{
-    Expr, Ident, LitStr, Token, parenthesized,
+    Expr, Ident, LitStr, Token,
+    ext::IdentExt,
+    parenthesized,
     parse::{Parse, ParseStream},
     token::Paren,
 };
@@ -29,7 +31,8 @@ impl Attribute {
 impl Parse for Attribute {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
-            name: input.parse()?,
+            // Accept Rust keywords as attribute names.
+            name: Ident::parse_any(input)?,
             eq: input.parse()?,
             value: input.parse()?,
         })
@@ -38,7 +41,7 @@ impl Parse for Attribute {
 
 impl ParseOption for Attribute {
     fn peek(input: ParseStream) -> bool {
-        input.peek(Ident) && input.peek2(Token![=])
+        input.peek(Ident::peek_any) && input.peek2(Token![=])
     }
 }
 
@@ -148,5 +151,40 @@ impl crate::pretty::PrettyPrint for Attributes {
             " ".pretty_print(printer);
             item.pretty_print(printer);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_string_valued_attribute() {
+        let attr: Attribute = syn::parse_str(r#"href="/about""#).unwrap();
+        assert_eq!(attr.name.to_string(), "href");
+        let AttributeValue::LitStr(lit) = &attr.value else {
+            panic!("expected literal value");
+        };
+        assert_eq!(lit.value(), "/about");
+    }
+
+    #[test]
+    fn parses_expression_valued_attribute() {
+        let attr: Attribute = syn::parse_str("href=(url)").unwrap();
+        assert!(matches!(attr.value, AttributeValue::Expr { .. }));
+    }
+
+    #[test]
+    fn parses_multiple_attributes() {
+        let attrs: Attributes = syn::parse_str(r#"type="text" name="q""#).unwrap();
+        assert_eq!(attrs.items.len(), 2);
+        assert_eq!(attrs.items[0].name.to_string(), "type");
+        assert_eq!(attrs.items[1].name.to_string(), "name");
+    }
+
+    #[test]
+    fn empty_input_yields_empty_attributes() {
+        let attrs: Attributes = syn::parse_str("").unwrap();
+        assert!(attrs.is_empty());
     }
 }

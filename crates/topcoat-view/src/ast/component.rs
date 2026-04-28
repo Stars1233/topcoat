@@ -169,3 +169,61 @@ impl crate::pretty::PrettyPrint for Component {
         printer.scan_end();
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parse(source: &str) -> Component {
+        syn::parse_str(source).unwrap()
+    }
+
+    fn parse_err(source: &str) -> String {
+        match syn::parse_str::<Component>(source) {
+            Ok(_) => panic!("expected parse error for `{source}`"),
+            Err(err) => err.to_string(),
+        }
+    }
+
+    fn path_segments(component: &Component) -> Vec<String> {
+        component
+            .path()
+            .segments
+            .iter()
+            .map(|s| s.ident.to_string())
+            .collect()
+    }
+
+    #[test]
+    fn parses_self_closing_form() {
+        let component = parse("[my::widget /]");
+        assert!(matches!(component, Component::SelfClosing { .. }));
+        assert_eq!(path_segments(&component), vec!["my", "widget"]);
+        assert!(component.children().is_empty());
+    }
+
+    #[test]
+    fn parses_normal_form_with_children() {
+        let component = parse(r#"[card]"hi"[/card]"#);
+        assert!(matches!(component, Component::Normal { .. }));
+        assert_eq!(component.children().len(), 1);
+    }
+
+    #[test]
+    fn collects_attributes_on_opening_tag() {
+        let component = parse(r#"[button label="ok" /]"#);
+        let attrs = component.attributes();
+        assert_eq!(attrs.items.len(), 1);
+        assert_eq!(attrs.items[0].name.to_string(), "label");
+    }
+
+    #[test]
+    fn missing_closing_tag_is_rejected() {
+        assert!(parse_err("[foo]").contains("missing closing tag"));
+    }
+
+    #[test]
+    fn mismatched_closing_path_is_rejected() {
+        assert!(parse_err("[foo][/bar]").contains("does not match"));
+    }
+}

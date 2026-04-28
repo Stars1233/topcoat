@@ -50,3 +50,24 @@ impl crate::pretty::PrettyPrint for View {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parse(source: &str) -> View {
+        syn::parse_str(source).unwrap()
+    }
+
+    #[test]
+    fn empty_input_yields_no_nodes() {
+        assert!(parse("").nodes.is_empty());
+    }
+
+    #[test]
+    fn collects_sibling_nodes_in_order() {
+        let view = parse(r#""a" "b" "c""#);
+        assert_eq!(view.nodes.len(), 3);
+        assert!(view.nodes.iter().all(|n| matches!(n, Node::Text(_))));
+    }
+}
