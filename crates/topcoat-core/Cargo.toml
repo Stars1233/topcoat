@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 axum.workspace = true
+bumpalo.workspace = true
 http.workspace = true
 tokio.workspace = true
 

@@ -5,6 +5,11 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+enum MemoizeResult<K, V> {
+    Miss { value: Arc<V> },
+    Hit { key: K, value: Arc<V> },
+}
+
 pub(super) struct DynRequestCache {
     entries: Mutex<HashMap<Box<dyn DynKey>, Arc<dyn Any + Send + Sync>>>,
 }
@@ -16,17 +21,26 @@ impl DynRequestCache {
         }
     }
 
-    fn get<T: Send + Sync + 'static>(&self, key: &dyn DynKey) -> Option<Arc<T>> {
-        let value = {
-            let guard = self.entries.lock().unwrap();
-            guard.get(key)?.clone()
-        };
-        Some(value.downcast::<T>().unwrap())
-    }
-
-    fn insert<T: Send + Sync + 'static>(&mut self, key: Box<dyn DynKey>, value: T) {
+    fn memoize<K, V, F>(&mut self, key: K, f: F) -> MemoizeResult<K, V>
+    where
+        K: DynKey,
+        V: Send + Sync + 'static,
+        F: FnOnce() -> V,
+    {
         let mut guard = self.entries.lock().unwrap();
-        guard.insert(key, Arc::new(value));
+        if let Some(value) = guard.get(&key as &dyn DynKey) {
+            MemoizeResult::Hit {
+                key,
+                value: value
+                    .clone()
+                    .downcast::<V>()
+                    .expect("wrong value type used for cache lookup"),
+            }
+        } else {
+            let value = Arc::new(f());
+            guard.insert(Box::new(key), value.clone());
+            MemoizeResult::Miss { value }
+        }
     }
 }
 

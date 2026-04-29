@@ -24,6 +24,7 @@ topcoat-router = { path = "crates/topcoat-router" }
 topcoat-view = { path = "crates/topcoat-view" }
 
 axum = "0.8.8"
+bumpalo = "3.20"
 clap = "4.6.0"
 console = "0.16"
 futures-util = "0.3"
