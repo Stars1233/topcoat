@@ -1,6 +1,7 @@
 mod memoize;
 mod parts;
 
+pub use memoize::*;
 pub use parts::*;
 
 use std::sync::Arc;
@@ -9,14 +10,14 @@ use axum::extract::RawPathParams;
 use http::request::Parts;
 use tokio::task_local;
 
-use crate::context::memoize::DynRequestCache;
+use crate::context::memoize::DynCache;
 
 #[derive(Debug)]
 pub struct Cx {
     parts: Parts,
     params: RawPathParams,
 
-    cache: DynRequestCache,
+    cache: DynCache,
 }
 
 // `Cx` lives for the entire `scope_context` future, so conceptually we'd just
@@ -36,7 +37,7 @@ pub async fn scope_context<F: Future>(parts: Parts, params: RawPathParams, f: F)
         Arc::new(Cx {
             parts,
             params,
-            cache: DynRequestCache::new(),
+            cache: DynCache::new(),
         }),
         f,
     )

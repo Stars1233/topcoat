@@ -1,5 +1,6 @@
 mod component;
 mod layout;
+mod memoize;
 mod page;
 mod quote_option;
 mod route;
@@ -49,4 +50,12 @@ pub fn layout(attr: TokenStream, item: TokenStream) -> TokenStream {
 pub fn segment(tokens: TokenStream) -> TokenStream {
     let segment = syn::parse_macro_input!(tokens as segment::Segment);
     quote! { #segment }.into()
+}
+
+#[proc_macro_attribute]
+pub fn memoize(attr: TokenStream, item: TokenStream) -> TokenStream {
+    let attr = syn::parse_macro_input!(attr as memoize::MemoizeAttr);
+    let item = syn::parse_macro_input!(item as memoize::MemoizeItem);
+    let memoize = memoize::Memoize::new(attr, item);
+    quote! { #memoize }.into()
 }

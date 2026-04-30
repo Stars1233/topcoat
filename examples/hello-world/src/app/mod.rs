@@ -3,12 +3,18 @@ mod about;
 
 use topcoat::{
     context::{Cx, uri},
+    memoize,
     router::{Slot, layout, page},
     view::{View, view},
 };
 
 pub fn router() -> topcoat::router::Router {
     topcoat::router::file_router!()
+}
+
+#[memoize]
+async fn kek(cx: &Cx, x: i32, y: i32) -> i32 {
+    x + y
 }
 
 #[layout]

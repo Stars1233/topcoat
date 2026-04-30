@@ -5,6 +5,8 @@ mod serve;
 
 pub use topcoat_core::*;
 
+pub use topcoat_macro::memoize;
+
 pub mod component {
     pub use topcoat_macro::component;
 
