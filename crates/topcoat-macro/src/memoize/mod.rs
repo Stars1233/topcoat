@@ -73,6 +73,7 @@ impl ToTokens for Memoize {
 
         let mut new_inputs: Vec<TokenStream> = Vec::new();
         let mut key_idents: Vec<syn::Ident> = Vec::new();
+        let mut borrowed_keys: Vec<TokenStream> = Vec::new();
         let mut closure_pats: Vec<TokenStream> = Vec::new();
         let mut destructures: Vec<TokenStream> = Vec::new();
 
@@ -88,7 +89,8 @@ impl ToTokens for Memoize {
             }
             let ty = &pat_type.ty;
             let pat = &pat_type.pat;
-            if let Pat::Ident(pi) = &**pat
+            let is_ref = matches!(&**ty, syn::Type::Reference(_));
+            let ident = if let Pat::Ident(pi) = &**pat
                 && pi.by_ref.is_none()
                 && pi.subpat.is_none()
             {
@@ -96,14 +98,20 @@ impl ToTokens for Memoize {
                 let ident = pi.ident.clone();
                 new_inputs.push(quote! { #mutability #ident: #ty });
                 closure_pats.push(quote! { #mutability #ident });
-                key_idents.push(ident);
+                ident
             } else {
                 let synth = format_ident!("__key_{}", key_idents.len());
                 new_inputs.push(quote! { #synth: #ty });
                 destructures.push(quote! { let #pat = #synth; });
                 closure_pats.push(quote! { #synth });
-                key_idents.push(synth);
+                synth
+            };
+            if is_ref {
+                borrowed_keys.push(quote! { #ident });
+            } else {
+                borrowed_keys.push(quote! { &#ident });
             }
+            key_idents.push(ident);
         }
 
         let return_type = match &sig.output {
@@ -114,6 +122,7 @@ impl ToTokens for Memoize {
         let call = if asyncness.is_some() {
             quote! {
                 cx.cache().memoize_async(
+                    (#(#borrowed_keys,)*),
                     (#(#key_idents,)*),
                     async |(#(#closure_pats,)*)| {
                         #(#destructures)*
@@ -124,6 +133,7 @@ impl ToTokens for Memoize {
         } else {
             quote! {
                 cx.cache().memoize(
+                    (#(#borrowed_keys,)*),
                     (#(#key_idents,)*),
                     |(#(#closure_pats,)*)| {
                         #(#destructures)*

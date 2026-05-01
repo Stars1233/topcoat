@@ -49,26 +49,26 @@ impl MemoizeCache {
         }
     }
 
-    pub fn memoize<'a, Q, O, K, V, F>(&'a self, key: Q, to_owned: O, f: F) -> Memoized<'a, V>
+    pub fn memoize<'a, Q, K, V, F>(&'a self, borrowed_key: Q, key: K, f: F) -> Memoized<'a, V>
     where
-        Q: Hash,
-        MemoizeKey<Q>: Equivalent<K>,
-        O: FnOnce(Q) -> (Q, K),
-        K: Eq + Hash + Send + Sync + 'static,
+        Q: Copy,
+        MemoizeKey<Q>: Hash + ToOwnedKey + Equivalent<<MemoizeKey<Q> as ToOwnedKey>::Owned>,
+        <MemoizeKey<Q> as ToOwnedKey>::Owned: Hash + Eq + Send + Sync + 'static,
         V: Send + Sync + 'static,
-        F: (FnOnce(Q) -> V) + 'static,
+        F: (FnOnce(K) -> V) + 'static,
     {
-        let key = MemoizeKey(key);
         let mut guard = self.entries.lock().unwrap();
-        let cache = guard
-            .entry(TypeId::of::<F>())
-            .or_insert_with(|| Box::new(HashMap::<K, Arc<V>>::new()));
-        let cache = cache.downcast_mut::<HashMap<K, Arc<V>>>().unwrap();
+        let cache = guard.entry(TypeId::of::<F>()).or_insert_with(|| {
+            Box::new(HashMap::<<MemoizeKey<Q> as ToOwnedKey>::Owned, Arc<V>>::new())
+        });
+        let cache = cache
+            .downcast_mut::<HashMap<<MemoizeKey<Q> as ToOwnedKey>::Owned, Arc<V>>>()
+            .unwrap();
 
-        if let Some(value) = cache.get(&key) {
+        if let Some(value) = cache.get(&MemoizeKey(borrowed_key)) {
             Memoized::new(value.clone())
         } else {
-            let (key, key_owned) = to_owned(key.0);
+            let key_owned = MemoizeKey(borrowed_key).to_owned_key();
             let value = Arc::new(f(key));
             cache.insert(key_owned, value.clone());
             Memoized::new(value)
@@ -112,20 +112,50 @@ impl std::fmt::Debug for MemoizeCache {
         f.debug_struct("MemoizeCache").finish()
     }
 }
+//
+// pub trait MemoizeKey {
+//     type Owned;
+//
+//     fn to_owned_key(&self) -> Self::Owned;
+//     fn equivalent(&self, key: &Self::Owned);
+// }
+//
+// struct Key<T>(T);
+//
+// impl<T: MemoizeKey> Equivalent<T::Owned> for Key<T> {
+//     fn equivalent(&self, key: &T::Owned) -> bool {
+//         MemoizeKey::equivalent(&self, key)
+//     }
+// }
 
 #[derive(Hash)]
 pub struct MemoizeKey<T>(T);
+
+pub trait ToOwnedKey {
+    type Owned;
+    fn to_owned_key(&self) -> Self::Owned;
+}
 
 macro_rules! impl_equivalent_tuple {
     ($(($kty:ident, $qty:ident, $accessor:tt)),*) => {
         impl<$($kty, $qty),*> Equivalent<($($kty,)*)> for MemoizeKey<($(&$qty,)*)>
         where
             $(
-                $qty: Equivalent<$kty>,
+                $qty: ?Sized + Equivalent<$kty>,
             )*
         {
             fn equivalent(&self, key: &($($kty,)*)) -> bool {
                 $(self.0.$accessor.equivalent(&key.$accessor))&&*
+            }
+        }
+
+        impl<$($qty),*> super::ToOwnedKey for MemoizeKey<($(&$qty,)*)>
+        where
+            $($qty: ?Sized + ToOwned,)*
+        {
+            type Owned = ($($qty::Owned,)*);
+            fn to_owned_key(&self) -> Self::Owned {
+                ($(self.0.$accessor.to_owned(),)*)
             }
         }
     };
