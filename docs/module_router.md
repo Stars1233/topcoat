@@ -151,13 +151,7 @@ Append `: Type` to parse the captured string into a custom type. The type must i
 topcoat::router::segment!(id: uuid::Uuid);
 ```
 
-The accessor now returns the parsed value:
-
-```rust
-fn id(cx: &Cx) -> uuid::Uuid { /* … */ }
-```
-
-Parsed path parameter values are [automatically memoized](./memoization.md).
+The accessor `id(cx)` now returns the parsed value, or an error if parsing failed. It is [automatically memoized](./memoization.md).
 
 ### Renaming the accessor
 
