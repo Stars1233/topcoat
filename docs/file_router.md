@@ -257,13 +257,3 @@ The resulting routes:
 | `/users/{id}/posts` | `app/users/id/posts.rs` |
 | `/posts` | `app/posts/mod.rs` |
 | `/posts/{slug}` | `app/posts/slug.rs` |
-
-
-segment!(group);
-segment!(static); // URL path is inferred from the rust module name (to kebab case)
-segment!(static("about-us")); // URL path changed, rust module name irrelevant
-segment!(catch_all);
-segment!(param); // axum name and rust function name are inferred from the rust module name
-segment!(param(uuid::Uuid)); // axum name and rust function name are inferred from the rust module name, parse as uuid
-segment!(param(pub id: uuid::Uuid)); // axum name matches rust function name
-segment!(param(pub id: uuid::Uuid as my_id)); // my_id is the rust function name, id is the name given to axum
