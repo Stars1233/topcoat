@@ -190,4 +190,5 @@ This maps the `app::docs::path` module to `/docs/{*path}`.
 | `segment!(post_id)` | `Param` | `/{post_id}` | `post_id(cx) -> &str` |
 | `segment!(post_id: uuid::Uuid)` | `Param` | `/{post_id}` | `post_id(cx) -> uuid::Uuid` |
 | `segment!(post_id as my_post_id)` | `Param` | `/{post_id}` | `my_post_id(cx) -> &str` |
+| `segment!(post_id: uuid::Uuid as my_post_id)` | `Param` | `/{post_id}` | `my_post_id(cx) -> uuid::Uuid` |
 | `segment!(..rest)` | `CatchAll` | `/{*rest}` | — |
