@@ -1,23 +1,33 @@
-mod component;
-mod layout;
 mod memoize;
-mod page;
-mod path_param;
-mod query_params;
 mod quote_option;
+
+#[cfg(feature = "view")]
+mod component;
+
+#[cfg(feature = "router")]
+mod layout;
+#[cfg(feature = "router")]
+mod page;
+#[cfg(feature = "router")]
+mod path_param;
+#[cfg(feature = "router")]
+mod query_params;
+#[cfg(feature = "router")]
 mod route;
+#[cfg(feature = "router")]
 mod segment;
 
 use proc_macro::TokenStream;
 use quote::quote;
-use topcoat_view::ast::View;
 
+#[cfg(feature = "view")]
 #[proc_macro]
 pub fn view(tokens: TokenStream) -> TokenStream {
-    let parsed = syn::parse_macro_input!(tokens as View);
+    let parsed = syn::parse_macro_input!(tokens as topcoat_view::ast::View);
     quote! { #parsed }.into()
 }
 
+#[cfg(feature = "view")]
 #[proc_macro_attribute]
 pub fn component(attr: TokenStream, item: TokenStream) -> TokenStream {
     let _attr = syn::parse_macro_input!(attr as component::ComponentAttr);
@@ -25,6 +35,7 @@ pub fn component(attr: TokenStream, item: TokenStream) -> TokenStream {
     quote! { #item }.into()
 }
 
+#[cfg(feature = "router")]
 #[proc_macro_attribute]
 pub fn route(attr: TokenStream, item: TokenStream) -> TokenStream {
     let _attr = syn::parse_macro_input!(attr as route::RouteAttr);
@@ -32,6 +43,7 @@ pub fn route(attr: TokenStream, item: TokenStream) -> TokenStream {
     quote! { #item }.into()
 }
 
+#[cfg(feature = "router")]
 #[proc_macro_attribute]
 pub fn page(attr: TokenStream, item: TokenStream) -> TokenStream {
     let attr = syn::parse_macro_input!(attr as page::PageAttr);
@@ -40,6 +52,7 @@ pub fn page(attr: TokenStream, item: TokenStream) -> TokenStream {
     quote! { #combined }.into()
 }
 
+#[cfg(feature = "router")]
 #[proc_macro_attribute]
 pub fn layout(attr: TokenStream, item: TokenStream) -> TokenStream {
     let attr = syn::parse_macro_input!(attr as layout::LayoutAttr);
@@ -48,12 +61,14 @@ pub fn layout(attr: TokenStream, item: TokenStream) -> TokenStream {
     quote! { #combined }.into()
 }
 
+#[cfg(feature = "router")]
 #[proc_macro]
 pub fn segment(tokens: TokenStream) -> TokenStream {
     let segment = syn::parse_macro_input!(tokens as segment::Segment);
     quote! { #segment }.into()
 }
 
+#[cfg(feature = "router")]
 #[proc_macro_attribute]
 pub fn path_param(attr: TokenStream, item: TokenStream) -> TokenStream {
     let attr = syn::parse_macro_input!(attr as path_param::PathParamAttr);
@@ -62,6 +77,7 @@ pub fn path_param(attr: TokenStream, item: TokenStream) -> TokenStream {
     quote! { #combined }.into()
 }
 
+#[cfg(feature = "router")]
 #[proc_macro_attribute]
 pub fn query_params(attr: TokenStream, item: TokenStream) -> TokenStream {
     let attr = syn::parse_macro_input!(attr as query_params::QueryParamsAttr);

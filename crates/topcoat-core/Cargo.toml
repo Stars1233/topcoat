@@ -8,7 +8,7 @@ boxcar.workspace = true
 hashbrown.workspace = true
 http.workspace = true
 pin-project.workspace = true
-tokio = { workspace = true, features = ["sync"] }
+tokio = { workspace = true, features = ["rt", "sync"] }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt"] }

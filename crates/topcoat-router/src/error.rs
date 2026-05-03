@@ -19,7 +19,7 @@ impl From<RedirectError> for Error {
 
 #[derive(Debug)]
 pub struct InternalServerError {
-    _inner: Box<dyn std::errior::Error + Send + Sync>,
+    _inner: Box<dyn std::error::Error + Send + Sync>,
 }
 
 impl From<InternalServerError> for Error {

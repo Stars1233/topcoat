@@ -1,6 +1,9 @@
 extern crate self as topcoat;
 
+#[cfg(feature = "router")]
 pub mod dev;
+
+#[cfg(feature = "router")]
 mod serve;
 
 pub mod context {
@@ -9,6 +12,7 @@ pub mod context {
     pub use topcoat_core::context::*;
 }
 
+#[cfg(feature = "view")]
 pub mod component {
     pub use topcoat_macro::component;
 
@@ -19,18 +23,21 @@ pub mod component {
     }
 }
 
+#[cfg(feature = "router")]
 pub mod router {
     pub use topcoat_macro::{layout, page, path_param, query_params, route, segment};
 
     pub use topcoat_router::*;
 }
 
+#[cfg(feature = "view")]
 pub mod view {
     pub use topcoat_macro::view;
 
     pub use topcoat_view::runtime::*;
 }
 
+#[cfg(feature = "router")]
 pub use serve::serve;
 
 #[doc(hidden)]

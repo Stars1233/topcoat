@@ -156,6 +156,7 @@ impl ModuleRouter {
     /// Segments are registered first (they must precede pages/layouts), then
     /// pages and layouts, and finally the inner router's own `discover()` is
     /// called to pick up any non-module-router pages and layouts.
+    #[cfg(feature = "discover")]
     pub fn discover(mut self) -> Self {
         for segment in inventory::iter::<Segment>().cloned() {
             self = self.segment(segment);
