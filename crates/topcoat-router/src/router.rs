@@ -28,10 +28,10 @@ use crate::{Layout, Layouts, Page, Pages};
 ///
 /// pub fn router() -> Router {
 ///     Router::new()
-///         .app_state(Database::connect())
 ///         .layout(root_layout)
 ///         .page(home)
 ///         .page(about)
+///         .app_state(Database::connect())
 /// }
 /// ```
 ///
@@ -40,8 +40,8 @@ use crate::{Layout, Layouts, Page, Pages};
 /// ```rust,ignore
 /// pub fn router() -> Router {
 ///     Router::new()
-///         .app_state(Database::connect())
 ///         .discover()
+///         .app_state(Database::connect())
 /// }
 /// ```
 #[derive(Default)]
@@ -119,8 +119,8 @@ impl Router {
     ///
     /// pub fn router() -> Router {
     ///     Router::new()
-    ///         .app_state(Database::connect())
     ///         .page(user_profile)
+    ///         .app_state(Database::connect())
     /// }
     ///
     /// async fn fetch_user(cx: &Cx, id: u64) -> User {
