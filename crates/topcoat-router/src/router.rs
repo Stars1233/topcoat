@@ -125,7 +125,7 @@ impl Router {
     ///
     /// async fn fetch_user(cx: &Cx, id: u64) -> User {
     ///     let db: &Database = app_state(cx);
-    ///     db.fetch_user(5).await;
+    ///     db.fetch_user(id).await;
     /// }
     /// ```
     pub fn app_state<T>(mut self, value: T) -> Self
