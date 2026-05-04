@@ -28,6 +28,7 @@ use crate::{Layout, Layouts, Page, Pages};
 ///
 /// pub fn router() -> Router {
 ///     Router::new()
+///         .app_state(Database::connect())
 ///         .layout(root_layout)
 ///         .page(home)
 ///         .page(about)
@@ -38,7 +39,9 @@ use crate::{Layout, Layouts, Page, Pages};
 ///
 /// ```rust,ignore
 /// pub fn router() -> Router {
-///     Router::new().discover()
+///     Router::new()
+///         .app_state(Database::connect())
+///         .discover()
 /// }
 /// ```
 #[derive(Default)]
