@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::process::Stdio;
 
 use clap::{Args, Subcommand};
@@ -14,6 +15,8 @@ pub struct AssetCommand {
 enum AssetSubcommand {
     /// List all asset paths embedded in the binary produced by cargo
     List(ListArgs),
+    /// Bundle all assets embedded in the binary into a directory
+    Bundle(BundleArgs),
 }
 
 #[derive(Args)]
@@ -26,16 +29,30 @@ struct ListArgs {
     package: Option<String>,
 }
 
+#[derive(Args)]
+struct BundleArgs {
+    /// Build and inspect the named binary target
+    #[arg(long)]
+    bin: Option<String>,
+    /// Build and inspect the named package
+    #[arg(short, long)]
+    package: Option<String>,
+    /// Output directory for the bundle (defaults to <cargo-target>/assets)
+    #[arg(short, long)]
+    out: Option<PathBuf>,
+}
+
 impl AssetCommand {
     pub async fn run(self) {
         match self.command {
             AssetSubcommand::List(args) => list(args).await,
+            AssetSubcommand::Bundle(args) => bundle(args).await,
         }
     }
 }
 
 async fn list(args: ListArgs) {
-    let executable = match build_executable(&args).await {
+    let executable = match build_executable(args.bin.as_deref(), args.package.as_deref()).await {
         Some(path) => path,
         None => std::process::exit(1),
     };
@@ -56,13 +73,61 @@ async fn list(args: ListArgs) {
     }
 }
 
-async fn build_executable(args: &ListArgs) -> Option<String> {
+async fn bundle(args: BundleArgs) {
+    let executable = match build_executable(args.bin.as_deref(), args.package.as_deref()).await {
+        Some(path) => path,
+        None => std::process::exit(1),
+    };
+
+    let bytes = match std::fs::read(&executable) {
+        Ok(bytes) => bytes,
+        Err(error) => {
+            eprintln!(
+                "{}",
+                style(format!("failed to read {executable}: {error}")).red()
+            );
+            std::process::exit(1);
+        }
+    };
+
+    let out_dir = match args.out {
+        Some(path) => path,
+        None => match default_out_dir(&executable) {
+            Some(path) => path,
+            None => {
+                eprintln!(
+                    "{}",
+                    style("could not derive cargo target directory; pass --out").red()
+                );
+                std::process::exit(1);
+            }
+        },
+    };
+
+    if let Err(error) = topcoat_asset::bundle(&bytes, &out_dir) {
+        eprintln!(
+            "{}",
+            style(format!("failed to bundle assets: {error}")).red()
+        );
+        std::process::exit(1);
+    }
+
+    println!("bundled assets into {}", out_dir.display());
+}
+
+fn default_out_dir(executable: &str) -> Option<PathBuf> {
+    let exe = PathBuf::from(executable);
+    let target_dir = exe.parent()?.parent()?;
+    Some(target_dir.join("assets"))
+}
+
+async fn build_executable(bin: Option<&str>, package: Option<&str>) -> Option<String> {
     let mut cmd = Command::new("cargo");
     cmd.args(["build", "--message-format=json"]);
-    if let Some(bin) = &args.bin {
+    if let Some(bin) = bin {
         cmd.args(["--bin", bin]);
     }
-    if let Some(package) = &args.package {
+    if let Some(package) = package {
         cmd.args(["--package", package]);
     }
 

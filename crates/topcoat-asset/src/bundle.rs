@@ -86,8 +86,7 @@ pub fn bundle(binary: &[u8], out_dir: impl AsRef<Path>) -> io::Result<()> {
     }
 
     let manifest = Manifest { assets: entries };
-    let toml_str =
-        toml::to_string_pretty(&manifest).map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+    let toml_str = toml::to_string_pretty(&manifest).map_err(io::Error::other)?;
     fs::write(out_dir.join(MANIFEST_NAME), toml_str)?;
 
     Ok(())
