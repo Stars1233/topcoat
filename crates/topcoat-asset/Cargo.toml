@@ -5,7 +5,6 @@ edition = "2024"
 
 [dependencies]
 const-serialize.workspace = true
-linkme.workspace = true
 
 [lints]
 workspace = true

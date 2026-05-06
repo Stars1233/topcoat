@@ -6,6 +6,11 @@ pub mod dev;
 #[cfg(feature = "router")]
 mod serve;
 
+#[cfg(feature = "asset")]
+pub mod asset {
+    pub use topcoat_asset;
+}
+
 pub mod context {
     pub use topcoat_macro::memoize;
 
