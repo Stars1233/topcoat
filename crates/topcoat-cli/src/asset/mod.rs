@@ -104,7 +104,7 @@ async fn bundle(args: BundleArgs) {
         },
     };
 
-    if let Err(error) = topcoat_asset::bundle(&bytes, &out_dir) {
+    if let Err(error) = topcoat_asset::Bundler::bundle(&bytes, &out_dir) {
         eprintln!(
             "{}",
             style(format!("failed to bundle assets: {error}")).red()
