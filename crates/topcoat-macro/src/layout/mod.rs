@@ -20,14 +20,12 @@ impl Parse for LayoutAttr {
 pub struct LayoutItem {
     item: ItemFn,
     args: Vec<Ident>,
-    has_cx: bool,
 }
 
 impl Parse for LayoutItem {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let item: ItemFn = input.parse()?;
         let mut args = Vec::new();
-        let mut has_cx = false;
         let mut has_slot = false;
         for arg in &item.sig.inputs {
             match arg {
@@ -38,13 +36,11 @@ impl Parse for LayoutItem {
                     ));
                 }
                 FnArg::Typed(pat_type) => match &*pat_type.pat {
-                    Pat::Ident(pi) if pi.ident == "slot" => {
-                        has_slot = true;
+                    Pat::Ident(pi) => {
                         args.push(pi.ident.clone());
-                    }
-                    Pat::Ident(pi) if pi.ident == "cx" => {
-                        has_cx = true;
-                        args.push(pi.ident.clone());
+                        if pi.ident == "slot" {
+                            has_slot = true;
+                        }
                     }
                     _ => {
                         return Err(syn::Error::new_spanned(
@@ -61,7 +57,7 @@ impl Parse for LayoutItem {
                 "layout functions must take a `slot: Slot` parameter",
             ));
         }
-        Ok(Self { item, args, has_cx })
+        Ok(Self { item, args })
     }
 }
 
@@ -80,19 +76,10 @@ impl ToTokens for Layout {
         let ident = &item.sig.ident;
         let args = &self.1.args;
 
-        let render = if self.1.has_cx {
-            quote! {
-                |slot| Box::pin(async move {
-                    #item
-                    ::topcoat::context::with_context(async |cx| #ident(#(#args),*).await).await
-                })
-            }
-        } else {
-            quote! {
-                |slot| {
-                    #item
-                    Box::pin(#ident(#(#args),*))
-                }
+        let render = quote! {
+            |cx, slot| {
+                #item
+                Box::pin(#ident(#(#args),*))
             }
         };
 

@@ -71,13 +71,16 @@ task_local! {
     static CX: Arc<Cx>;
 }
 
-pub async fn scope_context<F: Future>(
+pub async fn scope_context<F, R>(
     app_state: Arc<State>,
     request_state: State,
     f: F,
-) -> MaybeAborted<F::Output> {
+) -> MaybeAborted<R>
+where
+    F: AsyncFnOnce(&Cx) -> R,
+{
     let cx = Arc::new(Cx::new(app_state, request_state));
-    WatchAbort::new(&cx.clone(), CX.scope(cx, f)).await
+    WatchAbort::new(&cx.clone(), CX.scope(cx.clone(), f(&cx))).await
 }
 
 // `AsyncFnOnce` (rather than `FnOnce`) is required so the returned future is

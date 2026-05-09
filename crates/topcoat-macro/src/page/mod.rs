@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::{
-    FnArg, ItemFn, LitStr, Pat,
+    FnArg, Ident, ItemFn, LitStr, Pat,
     parse::{Parse, ParseStream},
 };
 
@@ -19,13 +19,13 @@ impl Parse for PageAttr {
 
 pub struct PageItem {
     item: ItemFn,
-    has_cx: bool,
+    args: Vec<Ident>,
 }
 
 impl Parse for PageItem {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let item: ItemFn = input.parse()?;
-        let mut has_cx = false;
+        let mut args = Vec::new();
         for arg in &item.sig.inputs {
             match arg {
                 FnArg::Receiver(r) => {
@@ -35,8 +35,8 @@ impl Parse for PageItem {
                     ));
                 }
                 FnArg::Typed(pat_type) => match &*pat_type.pat {
-                    Pat::Ident(pi) if pi.ident == "cx" => {
-                        has_cx = true;
+                    Pat::Ident(pi) => {
+                        args.push(pi.ident.clone());
                     }
                     _ => {
                         return Err(syn::Error::new_spanned(
@@ -47,7 +47,7 @@ impl Parse for PageItem {
                 },
             }
         }
-        Ok(Self { item, has_cx })
+        Ok(Self { item, args })
     }
 }
 
@@ -64,20 +64,12 @@ impl ToTokens for Page {
         let attr = &self.0;
         let item = &self.1.item;
         let ident = &item.sig.ident;
+        let args = &self.1.args;
 
-        let render = if self.1.has_cx {
-            quote! {
-                || Box::pin(async {
-                    #item
-                    ::topcoat::context::with_context(async |cx| #ident(cx).await).await
-                })
-            }
-        } else {
-            quote! {
-                || {
-                    #item
-                    Box::pin(#ident())
-                }
+        let render = quote! {
+            |cx| {
+                #item
+                Box::pin(#ident(#(#args),*))
             }
         };
 

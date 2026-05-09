@@ -21,7 +21,7 @@ async fn current_user(cx: &Cx) -> String {
 }
 
 #[layout]
-async fn layout(cx: &Cx, slot: Slot) -> Result {
+async fn layout(cx: &Cx, slot: Slot<'_>) -> Result {
     let user = current_user(cx).await;
     view! {
         <!DOCTYPE html>

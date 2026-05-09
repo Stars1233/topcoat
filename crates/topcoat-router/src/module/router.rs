@@ -415,7 +415,7 @@ mod tests {
     fn segment_after_page_panics() {
         let r = router("my_crate::app");
         // Register a page first, then try to add a segment.
-        let page = ModulePage::new("my_crate::app::about", || {
+        let page = ModulePage::new("my_crate::app::about", |_cx| {
             Box::pin(async { Ok(View::new("")) })
         });
         r.page(page)

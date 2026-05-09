@@ -164,18 +164,21 @@ impl From<Router> for axum::Router {
                     async move |extract::State(app_state): extract::State<Arc<State>>,
                                 params: RawPathParams,
                                 request: Request<Body>| {
-                        let mut render = page.render();
-                        for layout in layouts.iter().rev() {
-                            render = layout.render(render);
-                        }
-
                         let (parts, _body) = request.into_parts();
 
                         let mut request_state = State::new();
                         request_state.register(parts);
                         request_state.register(params);
 
-                        match scope_context(app_state, request_state, render).await {
+                        let result = scope_context(app_state, request_state, async |cx| {
+                            let mut render = page.render(cx);
+                            for layout in layouts.iter().rev() {
+                                render = layout.render(cx, render);
+                            }
+                        })
+                        .await;
+
+                        match result {
                             MaybeAborted::Completed(value) => value.into_response(),
                             MaybeAborted::Aborted(value) => {
                                 if let Ok(redirect) = value.downcast::<axum::response::Redirect>() {

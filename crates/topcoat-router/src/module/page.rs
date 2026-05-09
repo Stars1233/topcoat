@@ -1,6 +1,6 @@
-use std::{borrow::Cow, pin::Pin};
+use std::borrow::Cow;
 
-use crate::{Page, Path, Result};
+use crate::{Page, PageRenderFn, Path};
 
 /// A page discovered by the module router, produced by the `#[page]` macro.
 ///
@@ -13,15 +13,12 @@ pub struct ModulePage {
     /// Module path where `#[page]` was declared, used to derive the URL path.
     module_path: &'static str,
     /// The page's async render function, returning a [`Result`].
-    pub(super) render: fn() -> Pin<Box<dyn Future<Output = Result> + Send>>,
+    pub(super) render: PageRenderFn,
 }
 
 impl ModulePage {
     /// Creates a new module page. Called by the expanded `#[page]` macro.
-    pub const fn new(
-        module_path: &'static str,
-        render: fn() -> Pin<Box<dyn Future<Output = Result> + Send>>,
-    ) -> Self {
+    pub const fn new(module_path: &'static str, render: PageRenderFn) -> Self {
         Self {
             module_path,
             render,

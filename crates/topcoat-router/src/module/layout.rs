@@ -1,6 +1,6 @@
-use std::{borrow::Cow, pin::Pin};
+use std::borrow::Cow;
 
-use crate::{Layout, Path, Result, Slot};
+use crate::{Layout, LayoutRenderFn, Path};
 
 /// A layout discovered by the module router, produced by the `#[layout]` macro.
 ///
@@ -13,15 +13,12 @@ pub struct ModuleLayout {
     /// Module path where `#[layout]` was declared, used to derive the URL path.
     module_path: &'static str,
     /// The layout's async render function, receiving a [`Slot`] and returning a [`Result`].
-    render: fn(slot: Slot) -> Pin<Box<dyn Future<Output = Result> + Send>>,
+    render: LayoutRenderFn,
 }
 
 impl ModuleLayout {
     /// Creates a new module layout. Called by the expanded `#[layout]` macro.
-    pub const fn new(
-        module_path: &'static str,
-        render: fn(slot: Slot) -> Pin<Box<dyn Future<Output = Result> + Send>>,
-    ) -> Self {
+    pub const fn new(module_path: &'static str, render: LayoutRenderFn) -> Self {
         Self {
             module_path,
             render,

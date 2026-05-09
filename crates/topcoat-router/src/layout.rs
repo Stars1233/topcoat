@@ -1,12 +1,18 @@
 use std::{borrow::Cow, collections::HashMap, pin::Pin};
 
+use topcoat_core::context::Cx;
+
 use crate::{Path, Result};
+
+/// The async render function backing a [`Layout`], receiving a [`Slot`] for child content.
+pub type LayoutRenderFn =
+    for<'cx> fn(cx: &'cx Cx, slot: Slot<'cx>) -> Pin<Box<dyn Future<Output = Result> + Send + 'cx>>;
 
 /// A future that resolves to the inner page (or nested layout) [`Result`].
 ///
 /// Every layout render function receives a `Slot` and `.await`s it to embed
 /// the child content at the desired location.
-pub type Slot = Pin<Box<dyn Future<Output = Result> + Send>>;
+pub type Slot<'cx> = Pin<Box<dyn Future<Output = Result> + Send + 'cx>>;
 
 /// A layout that wraps pages whose path starts with the layout's path prefix.
 ///
@@ -18,15 +24,12 @@ pub struct Layout {
     /// The path prefix this layout applies to.
     path: Cow<'static, Path>,
     /// The async render function that wraps child content via a [`Slot`].
-    render: fn(slot: Slot) -> Pin<Box<dyn Future<Output = Result> + Send>>,
+    render: LayoutRenderFn,
 }
 
 impl Layout {
     /// Creates a new layout with an explicit path and render function.
-    pub const fn new(
-        path: Cow<'static, Path>,
-        render: fn(slot: Slot) -> Pin<Box<dyn Future<Output = Result> + Send>>,
-    ) -> Self {
+    pub const fn new(path: Cow<'static, Path>, render: LayoutRenderFn) -> Self {
         Self { path, render }
     }
 
@@ -36,8 +39,12 @@ impl Layout {
     }
 
     /// Renders the layout, embedding the given [`Slot`] as child content.
-    pub fn render(&self, slot: Slot) -> Pin<Box<dyn Future<Output = Result> + Send>> {
-        (self.render)(slot)
+    pub fn render<'cx>(
+        &self,
+        cx: &'cx Cx,
+        slot: Slot<'cx>,
+    ) -> Pin<Box<dyn Future<Output = Result> + Send + 'cx>> {
+        (self.render)(cx, slot)
     }
 }
 
@@ -81,7 +88,7 @@ impl Layouts {
 mod tests {
     use super::*;
 
-    fn dummy_render(slot: Slot) -> Pin<Box<dyn Future<Output = Result> + Send>> {
+    fn dummy_render(_cx: &Cx, slot: Slot) -> Pin<Box<dyn Future<Output = Result> + Send>> {
         Box::pin(slot)
     }
 
