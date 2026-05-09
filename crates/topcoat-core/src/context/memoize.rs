@@ -5,10 +5,12 @@
 //! result instead of recomputing it.
 
 use std::{
-    any::{Any, TypeId},
+    any::Any,
     collections::hash_map::RandomState,
     future::Future,
     hash::Hash,
+    marker::PhantomData,
+    ops::{Deref, DerefMut},
     sync::{Mutex, OnceLock},
 };
 
@@ -17,20 +19,29 @@ use tokio::sync::OnceCell;
 
 use crate::context::Cx;
 
+/// The per-request store backing `#[memoize]`.
+///
+/// `entries` maps an `(F, K)` shape to an index into `values` via [`anymap3::Map`], where `F` is
+/// the memoized function (used as a marker type to keep different functions' caches disjoint) and
+/// `K` is the owned key type. `values` holds the actual cells (`OnceLock<V>` / `OnceCell<V>`)
+/// behind a stable address so we can hand out `&V` references whose lifetime is tied to the cache.
 #[doc(hidden)]
 pub struct MemoizeCache {
-    entries: Mutex<HashMap<TypeId, Box<dyn Any + Send + Sync>>>,
+    entries: Mutex<anymap3::Map<dyn Any + Send + Sync>>,
     values: boxcar::Vec<Box<dyn Any + Send + Sync + 'static>>,
 }
 
 impl MemoizeCache {
     pub(super) fn new() -> Self {
         Self {
-            entries: Mutex::new(HashMap::new()),
+            entries: Mutex::new(anymap3::Map::new()),
             values: boxcar::Vec::new(),
         }
     }
 
+    /// Returns a stable reference to the cell associated with `(Marker, key)`, creating a default
+    /// cell on first access. `Marker` is the function type and partitions the cache so unrelated
+    /// memoized functions cannot observe each other's entries even when they share a key shape.
     fn get_or_insert_cell<Marker, K, Cell>(&self, key: K) -> &Cell
     where
         Marker: 'static,
@@ -41,16 +52,9 @@ impl MemoizeCache {
     {
         let index = {
             let mut guard = self.entries.lock().unwrap();
-            let cache = guard.entry(TypeId::of::<Marker>()).or_insert_with(|| {
-                Box::new(HashMap::<
-                    <MemoizeKey<K> as ToOwnedKey>::Owned,
-                    usize,
-                    RandomState,
-                >::with_hasher(RandomState::new()))
-            });
-            let cache = cache
-                .downcast_mut::<HashMap<<MemoizeKey<K> as ToOwnedKey>::Owned, usize, RandomState>>()
-                .unwrap();
+            let cache = guard
+                .entry::<MarkedHashMap<Marker, <MemoizeKey<K> as ToOwnedKey>::Owned, usize>>()
+                .or_insert_with(|| MarkedHashMap::new());
 
             // Look up using the borrowed key via `Equivalent` to avoid cloning the arguments on
             // cache hits; only clone into an owned key when inserting.
@@ -66,6 +70,9 @@ impl MemoizeCache {
         self.values.get(index).unwrap().downcast_ref().unwrap()
     }
 
+    /// Runs `f(cx, params)` at most once per `(F, key)` and returns a reference to the cached
+    /// result. `key` is the borrowed lookup key (e.g. `(&str,)`) used to avoid cloning on cache
+    /// hits; `params` is what gets passed to `f` on a miss.
     pub fn memoize<'a, K, P, V, F>(&'a self, cx: &'a Cx, key: K, params: P, f: F) -> &'a V
     where
         K: Copy,
@@ -78,6 +85,8 @@ impl MemoizeCache {
         cell.get_or_init(|| f(cx, params))
     }
 
+    /// Async counterpart to [`memoize`](Self::memoize). Concurrent callers with the same key
+    /// share a single in-flight future via `tokio::sync::OnceCell`.
     pub async fn memoize_async<'a, K, P, V, F, Fut>(
         &'a self,
         cx: &'a Cx,
@@ -101,6 +110,37 @@ impl MemoizeCache {
 impl std::fmt::Debug for MemoizeCache {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MemoizeCache").finish()
+    }
+}
+
+/// A `HashMap` tagged by a phantom marker type `T` so that maps for different markers are
+/// distinct types in `anymap3`. Two memoized functions with identical `K`/`V` types stay in
+/// separate entries because their `T` (the function type) differs.
+struct MarkedHashMap<T, K, V> {
+    inner: HashMap<K, V, RandomState>,
+    _type: PhantomData<fn() -> T>,
+}
+
+impl<T, K, V> MarkedHashMap<T, K, V> {
+    fn new() -> Self {
+        Self {
+            inner: HashMap::with_hasher(RandomState::new()),
+            _type: PhantomData,
+        }
+    }
+}
+
+impl<T, K, V> Deref for MarkedHashMap<T, K, V> {
+    type Target = HashMap<K, V, RandomState>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+impl<T, K, V> DerefMut for MarkedHashMap<T, K, V> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inner
     }
 }
 
