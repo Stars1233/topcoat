@@ -1,3 +1,5 @@
+use topcoat_core::context::Cx;
+
 use crate::runtime::{Formatter, view::View};
 
 /// A piece of content that can be rendered into HTML.
@@ -8,9 +10,9 @@ use crate::runtime::{Formatter, view::View};
 /// - [`fmt_unescaped`](Self::fmt_unescaped) — writes content verbatim, for trusted markup.
 pub trait Fragment {
     /// Renders this fragment into the formatter, escaping by default.
-    fn fmt(&self, f: &mut Formatter<'_>);
+    fn fmt(&self, cx: &Cx, f: &mut Formatter<'_>);
     /// Renders this fragment into the formatter without escaping.
-    fn fmt_unescaped(&self, f: &mut Formatter<'_>);
+    fn fmt_unescaped(&self, cx: &Cx, f: &mut Formatter<'_>);
 }
 
 impl<T> Fragment for &T
@@ -18,36 +20,36 @@ where
     T: Fragment + ?Sized,
 {
     #[inline]
-    fn fmt(&self, f: &mut Formatter<'_>) {
-        (*self).fmt(f)
+    fn fmt(&self, cx: &Cx, f: &mut Formatter<'_>) {
+        (*self).fmt(cx, f)
     }
 
     #[inline]
-    fn fmt_unescaped(&self, f: &mut Formatter<'_>) {
-        (*self).fmt_unescaped(f)
+    fn fmt_unescaped(&self, cx: &Cx, f: &mut Formatter<'_>) {
+        (*self).fmt_unescaped(cx, f)
     }
 }
 
 impl Fragment for str {
     #[inline]
-    fn fmt(&self, f: &mut Formatter<'_>) {
+    fn fmt(&self, _cx: &Cx, f: &mut Formatter<'_>) {
         f.write_str(self)
     }
 
     #[inline]
-    fn fmt_unescaped(&self, f: &mut Formatter<'_>) {
+    fn fmt_unescaped(&self, _cx: &Cx, f: &mut Formatter<'_>) {
         f.write_str_unescaped(self)
     }
 }
 
 impl Fragment for String {
     #[inline]
-    fn fmt(&self, f: &mut Formatter<'_>) {
+    fn fmt(&self, _cx: &Cx, f: &mut Formatter<'_>) {
         f.write_str(self)
     }
 
     #[inline]
-    fn fmt_unescaped(&self, f: &mut Formatter<'_>) {
+    fn fmt_unescaped(&self, _cx: &Cx, f: &mut Formatter<'_>) {
         f.write_str_unescaped(self)
     }
 }
@@ -57,28 +59,28 @@ where
     T: Fragment,
 {
     #[inline]
-    fn fmt(&self, f: &mut Formatter<'_>) {
+    fn fmt(&self, cx: &Cx, f: &mut Formatter<'_>) {
         if let Some(fragment) = self {
-            fragment.fmt(f);
+            fragment.fmt(cx, f);
         }
     }
     #[inline]
-    fn fmt_unescaped(&self, f: &mut Formatter<'_>) {
+    fn fmt_unescaped(&self, cx: &Cx, f: &mut Formatter<'_>) {
         if let Some(fragment) = self {
-            fragment.fmt_unescaped(f);
+            fragment.fmt_unescaped(cx, f);
         }
     }
 }
 
 impl Fragment for View {
     #[inline]
-    fn fmt(&self, f: &mut Formatter<'_>) {
+    fn fmt(&self, cx: &Cx, f: &mut Formatter<'_>) {
         // Views are guaranteed to already be escaped.
-        self.fmt_unescaped(f);
+        self.fmt_unescaped(cx, f);
     }
 
     #[inline]
-    fn fmt_unescaped(&self, f: &mut Formatter<'_>) {
+    fn fmt_unescaped(&self, _cx: &Cx, f: &mut Formatter<'_>) {
         f.write_str_unescaped(&self.buf)
     }
 }
@@ -87,12 +89,12 @@ macro_rules! impl_with_display {
     ($ty:ty) => {
         impl Fragment for $ty {
             #[inline]
-            fn fmt(&self, f: &mut Formatter<'_>) {
+            fn fmt(&self, _cx: &Cx, f: &mut Formatter<'_>) {
                 f.write_str(&self.to_string())
             }
 
             #[inline]
-            fn fmt_unescaped(&self, f: &mut Formatter<'_>) {
+            fn fmt_unescaped(&self, _cx: &Cx, f: &mut Formatter<'_>) {
                 f.write_str_unescaped(&self.to_string())
             }
         }
@@ -143,12 +145,12 @@ where
     T: Fragment,
 {
     #[inline]
-    fn fmt(&self, f: &mut Formatter<'_>) {
-        self.fmt_unescaped(f)
+    fn fmt(&self, cx: &Cx, f: &mut Formatter<'_>) {
+        self.fmt_unescaped(cx, f)
     }
 
     #[inline]
-    fn fmt_unescaped(&self, f: &mut Formatter<'_>) {
-        self.0.fmt_unescaped(f)
+    fn fmt_unescaped(&self, cx: &Cx, f: &mut Formatter<'_>) {
+        self.0.fmt_unescaped(cx, f)
     }
 }

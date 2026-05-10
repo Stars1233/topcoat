@@ -9,6 +9,7 @@ parsing = []
 pretty = ["parsing", "dep:topcoat-pretty"]
 
 [dependencies]
+topcoat-core.workspace = true
 topcoat-pretty = { workspace = true, optional = true }
 
 axum = { workspace = true, optional = true }

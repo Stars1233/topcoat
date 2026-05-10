@@ -43,7 +43,7 @@ impl ViewWriter {
     fn flush(&mut self) {
         if !self.static_segment.is_empty() {
             let static_segment = &self.static_segment;
-            quote! { ::topcoat::view::Fragment::fmt_unescaped(#static_segment, &mut __f); }
+            quote! { ::topcoat::view::Fragment::fmt_unescaped(#static_segment, __cx, &mut __f); }
                 .to_tokens(&mut self.tokens);
             self.capacity += self.static_segment.len();
             self.static_segment.clear();
@@ -60,13 +60,14 @@ impl ViewWriter {
 
     pub fn write_expr_unescaped(&mut self, expr: TokenStream) {
         self.flush();
-        quote! { ::topcoat::view::Fragment::fmt_unescaped(&#expr, &mut __f); }
+        quote! { ::topcoat::view::Fragment::fmt_unescaped(&#expr, __cx, &mut __f); }
             .to_tokens(&mut self.tokens);
     }
 
     pub fn write_expr(&mut self, expr: TokenStream) {
         self.flush();
-        quote! { ::topcoat::view::Fragment::fmt(&#expr, &mut __f); }.to_tokens(&mut self.tokens);
+        quote! { ::topcoat::view::Fragment::fmt(&#expr, __cx, &mut __f); }
+            .to_tokens(&mut self.tokens);
     }
 
     pub fn write_raw(&mut self, tokens: TokenStream) {
@@ -86,7 +87,7 @@ impl ToTokens for ViewWriter {
                 let buffer = &self.tokens;
                 let capacity = self.capacity + static_segment.len();
                 let final_segment = (!static_segment.is_empty()).then(|| {
-                    quote! { ::topcoat::view::Fragment::fmt_unescaped(#static_segment, &mut __f); }
+                    quote! { ::topcoat::view::Fragment::fmt_unescaped(#static_segment, __cx, &mut __f); }
                 });
                 quote! {{
                     let mut __buf = ::std::string::String::with_capacity(#capacity);
