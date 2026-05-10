@@ -1,8 +1,7 @@
 use topcoat::{
-    component::component,
     context::{Cx, app_state},
     router::{Result, uri},
-    view::{View, view},
+    view::{View, component, view},
 };
 
 #[component]

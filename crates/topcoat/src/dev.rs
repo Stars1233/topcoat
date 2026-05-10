@@ -2,10 +2,7 @@ use futures_util::SinkExt;
 use tokio_tungstenite::tungstenite::Message;
 use topcoat_router::Result;
 
-use crate::{
-    component::component,
-    view::{View, view},
-};
+use crate::view::{View, component, view};
 
 /// Notify the topcoat dev server that the application is ready.
 ///

@@ -17,24 +17,6 @@ pub mod context {
     pub use topcoat_core::context::*;
 }
 
-#[cfg(feature = "view")]
-pub mod component {
-    use topcoat_core::context::Cx;
-    use topcoat_view::runtime::View;
-
-    pub use topcoat_macro::component;
-
-    pub trait Component {
-        type Error;
-
-        fn render(
-            self,
-            cx: &Cx,
-            child: View,
-        ) -> impl Future<Output = Result<crate::view::View, Self::Error>> + Send;
-    }
-}
-
 #[cfg(feature = "router")]
 pub mod router {
     pub use topcoat_macro::{layout, page, path_param, query_params, route, segment};
@@ -44,7 +26,7 @@ pub mod router {
 
 #[cfg(feature = "view")]
 pub mod view {
-    pub use topcoat_macro::view;
+    pub use topcoat_macro::{component, view};
 
     pub use topcoat_view::runtime::*;
 }
