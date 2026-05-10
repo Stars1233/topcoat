@@ -69,7 +69,13 @@ async fn list(args: ListArgs) {
     };
 
     for asset in topcoat_asset::RawAsset::find_in_binary(&bytes) {
-        println!("{:?}", asset.resolved_path());
+        println!(
+            "{}",
+            asset
+                .resolved_path()
+                .to_str()
+                .unwrap_or("<non-utf8 file path>")
+        );
     }
 }
 

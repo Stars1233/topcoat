@@ -187,11 +187,18 @@ async fn build_and_run(initial: bool, dev_url: &str) -> Option<Child> {
         return None;
     };
 
+    if let Err(error) = bundle_assets(&exe) {
+        eprintln!(
+            "  {}",
+            style(format!("failed to bundle assets: {error}")).yellow()
+        );
+    }
+
     eprintln!("  {}", style("ready").green().bold());
     eprintln!();
 
     Some(
-        Command::new(exe)
+        Command::new(&exe)
             .env("TOPCOAT_DEV_URL", dev_url)
             .stdout(Stdio::inherit())
             .stderr(Stdio::inherit())
@@ -205,4 +212,20 @@ async fn build_and_run(initial: bool, dev_url: &str) -> Option<Child> {
 async fn kill_child(child: &mut Child) {
     let _ = child.kill().await;
     let _ = child.wait().await;
+}
+
+fn bundle_assets(executable: &str) -> std::io::Result<()> {
+    let exe = PathBuf::from(executable);
+    let out_dir = exe
+        .parent()
+        .and_then(|p| p.parent())
+        .ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "could not derive cargo target directory",
+            )
+        })?
+        .join("assets");
+    let bytes = std::fs::read(&exe)?;
+    topcoat_asset::Bundler::bundle(&bytes, &out_dir)
 }
