@@ -1,5 +1,6 @@
 use std::{borrow::Cow, collections::HashMap, pin::Pin};
 
+use http::Method;
 use topcoat_core::context::Cx;
 
 use crate::{Path, Result};
@@ -14,6 +15,8 @@ pub type RouteHandlerFn =
 /// (which derives the path from the module tree). Registered into a [`Router`](crate::Router).
 #[derive(Debug, Clone)]
 pub struct Route {
+    /// The HTTP method this route responds to.
+    method: Method,
     /// The URL path this route handles.
     path: Cow<'static, Path>,
     /// The async render function that produces the page [`View`].
@@ -21,14 +24,26 @@ pub struct Route {
 }
 
 impl Route {
-    pub const fn new(path: Cow<'static, Path>, render: RouteHandlerFn) -> Self {
-        Self { path, render }
+    /// Creates a new route with an explicit method, path, and handler function.
+    pub const fn new(method: Method, path: Cow<'static, Path>, render: RouteHandlerFn) -> Self {
+        Self {
+            method,
+            path,
+            render,
+        }
     }
 
+    /// Returns the HTTP method this route responds to.
+    pub fn method(&self) -> &Method {
+        &self.method
+    }
+
+    /// Returns the URL path this route handles.
     pub fn path(&self) -> &Path {
         &self.path
     }
 
+    /// Invokes the route's handler, returning a [`Result`].
     pub fn render<'cx>(&self, cx: &'cx Cx) -> Pin<Box<dyn Future<Output = Result> + Send + 'cx>> {
         (self.render)(cx)
     }
@@ -83,7 +98,7 @@ mod tests {
     }
 
     fn route(path: &'static str) -> Route {
-        Route::new(Cow::Borrowed(Path::new(path)), dummy_render)
+        Route::new(Method::GET, Cow::Borrowed(Path::new(path)), dummy_render)
     }
 
     // ── Route ──
