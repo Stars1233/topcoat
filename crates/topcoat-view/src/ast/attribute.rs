@@ -56,8 +56,6 @@ impl topcoat_pretty::PrettyPrint for Attribute {
     }
 }
 
-/// The right-hand side of an attribute. Either a parenthesized Rust expression
-/// (`class=(some_expr)`) or a string literal (`class="foo"`).
 pub enum AttributeValue {
     Expr { paren: Paren, expr: Box<Expr> },
     LitStr(LitStr),
