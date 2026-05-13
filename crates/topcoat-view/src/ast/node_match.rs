@@ -4,7 +4,7 @@ use syn::{
     token::Brace,
 };
 
-use crate::ast::{ViewWriter, node::Node, parse_option::ParseOption};
+use crate::ast::{ViewWriter, node::Node, parse_option::ParseOption, view_writer::MatchArmsBuilder};
 
 /// A `match expr { ... }` expression in view-body position.
 pub struct NodeMatch {
@@ -16,7 +16,11 @@ pub struct NodeMatch {
 
 impl NodeMatch {
     pub(crate) fn write(&self, writer: &mut ViewWriter) {
-        todo!();
+        writer.match_expr(&self.expr, |arms| {
+            for arm in &self.arms {
+                arm.write(arms);
+            }
+        });
     }
 }
 
@@ -78,8 +82,12 @@ pub struct NodeMatchArm {
 }
 
 impl NodeMatchArm {
-    pub(crate) fn write(&self, writer: &mut ViewWriter) {
-        todo!();
+    pub(crate) fn write(&self, arms: &mut MatchArmsBuilder) {
+        arms.arm(
+            &self.pat,
+            self.guard.as_ref().map(|(_, expr)| expr.as_ref()),
+            |writer| self.body.write(writer),
+        );
     }
 }
 

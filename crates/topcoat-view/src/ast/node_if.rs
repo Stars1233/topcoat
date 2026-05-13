@@ -15,7 +15,7 @@ pub struct NodeIf {
 
 impl NodeIf {
     pub(crate) fn write(&self, writer: &mut ViewWriter) {
-        let mut writer = writer.if_else(&self.cond, |then_writer, else_writer| {
+        writer.if_else(&self.cond, |then_writer, else_writer| {
             self.then_branch.write(then_writer);
             if let Some(else_branch) = self.else_branch.as_ref() {
                 else_branch.write(else_writer);

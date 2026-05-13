@@ -42,12 +42,10 @@ async fn layout(cx: &Cx, slot: Slot<'_>) -> Result {
                     <a href="/about">"about"</a>
                     <span class=("test")>" | "</span>
                     <a href="/contact">"contact"</a>
-            if true {
                     <span>
                         " | signed in as "
                         ((*user).clone())
                     </span>
-            }
                 </nav>
                 <hr>
 

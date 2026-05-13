@@ -14,6 +14,16 @@ enum Chunk {
         then_branch: Box<ViewWriter>,
         else_branch: Box<ViewWriter>,
     },
+    Match {
+        expr: Box<Expr>,
+        arms: Vec<MatchArm>,
+    },
+}
+
+struct MatchArm {
+    pat: Pat,
+    guard: Option<Expr>,
+    body: Box<ViewWriter>,
 }
 
 /// Builds the `TokenStream` that a `view!` invocation expands to.
@@ -94,6 +104,16 @@ impl ViewWriter {
         });
     }
 
+    pub fn match_expr(&mut self, expr: &Expr, f: impl FnOnce(&mut MatchArmsBuilder)) {
+        self.flush();
+        let mut builder = MatchArmsBuilder { arms: Vec::new() };
+        f(&mut builder);
+        self.chunks.push(Chunk::Match {
+            expr: Box::new(expr.clone()),
+            arms: builder.arms,
+        });
+    }
+
     pub fn into_token_stream(mut self) -> TokenStream {
         self.flush();
 
@@ -127,6 +147,21 @@ impl ViewWriter {
                                 quote! {
                                     for #pat in #expr {
                                         #body
+                                    }
+                                }
+                            }
+                            Chunk::Match { expr, arms } => {
+                                let arm_tokens = arms.iter().map(|arm| {
+                                    let pat = &arm.pat;
+                                    let guard = arm.guard.as_ref().map(|g| quote! { if #g });
+                                    let body = recursive(&arm.body.chunks);
+                                    quote! {
+                                        #pat #guard => { #body }
+                                    }
+                                });
+                                quote! {
+                                    match #expr {
+                                        #(#arm_tokens,)*
                                     }
                                 }
                             }
@@ -171,5 +206,22 @@ impl ViewWriter {
         } else {
             quote! { async { Ok(#format_expr) }.await }
         }
+    }
+}
+
+pub(crate) struct MatchArmsBuilder {
+    arms: Vec<MatchArm>,
+}
+
+impl MatchArmsBuilder {
+    pub fn arm(&mut self, pat: &Pat, guard: Option<&Expr>, f: impl FnOnce(&mut ViewWriter)) {
+        let mut body = ViewWriter::new();
+        f(&mut body);
+        body.flush();
+        self.arms.push(MatchArm {
+            pat: pat.clone(),
+            guard: guard.cloned(),
+            body: Box::new(body),
+        });
     }
 }
