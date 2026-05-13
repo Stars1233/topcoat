@@ -26,8 +26,10 @@ pub struct View {
 
 impl View {
     #[inline]
-    pub fn new(part: ViewPart) -> Self {
-        Self { part }
+    pub fn new(part: impl IntoViewPart) -> Self {
+        Self {
+            part: part.into_view_part(),
+        }
     }
 }
 
@@ -39,6 +41,7 @@ impl Fragment for View {
 
 #[derive(Debug, Clone)]
 pub enum ViewPart {
+    Empty,
     Bool(bool),
     Char(char),
     I8(i8),
@@ -57,7 +60,7 @@ pub enum ViewPart {
     F64(f64),
     StaticStr(&'static str),
     String(String),
-    Dyn(Box<dyn DynViewPart>),
+    BoxDyn(Box<dyn DynViewPart>),
     Node(Box<[ViewPart]>),
 }
 
@@ -91,6 +94,7 @@ impl Clone for Box<dyn DynViewPart> {
 impl Fragment for ViewPart {
     fn fmt(&self, cx: &Cx, f: &mut Formatter<'_>) {
         match self {
+            Self::Empty => {}
             Self::StaticStr(s) => s.fmt(cx, f),
             Self::String(s) => s.fmt(cx, f),
             Self::Bool(v) => v.fmt(cx, f),
@@ -109,7 +113,7 @@ impl Fragment for ViewPart {
             Self::Usize(v) => v.fmt(cx, f),
             Self::F32(v) => v.fmt(cx, f),
             Self::F64(v) => v.fmt(cx, f),
-            Self::Dyn(d) => d.dyn_fmt(cx, f),
+            Self::BoxDyn(d) => d.dyn_fmt(cx, f),
             Self::Node(parts) => {
                 for part in parts.iter() {
                     part.fmt(cx, f);
@@ -121,6 +125,13 @@ impl Fragment for ViewPart {
 
 pub trait IntoViewPart {
     fn into_view_part(self) -> ViewPart;
+}
+
+impl IntoViewPart for ViewPart {
+    #[inline]
+    fn into_view_part(self) -> ViewPart {
+        self
+    }
 }
 
 impl IntoViewPart for &'static str {
@@ -140,7 +151,7 @@ impl IntoViewPart for String {
 impl IntoViewPart for Box<dyn DynViewPart> {
     #[inline]
     fn into_view_part(self) -> ViewPart {
-        ViewPart::Dyn(self)
+        ViewPart::BoxDyn(self)
     }
 }
 
@@ -178,3 +189,15 @@ impl_into_view_part_primitive!(U128, u128);
 impl_into_view_part_primitive!(Usize, usize);
 impl_into_view_part_primitive!(F32, f32);
 impl_into_view_part_primitive!(F64, f64);
+
+impl<T> IntoViewPart for Option<T>
+where
+    T: IntoViewPart,
+{
+    fn into_view_part(self) -> ViewPart {
+        match self {
+            Some(value) => value.into_view_part(),
+            None => ViewPart::Empty,
+        }
+    }
+}
