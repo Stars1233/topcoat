@@ -71,11 +71,11 @@ impl std::error::Error for BuildError {}
 impl BuildError {
     pub fn print_and_exit(self) -> ! {
         eprintln!("{}", style(self.to_string()).red().bold());
-        if let Self::Failed { rendered } = &self {
-            if !rendered.is_empty() {
-                eprintln!();
-                eprint!("{rendered}");
-            }
+        if let Self::Failed { rendered } = &self
+            && !rendered.is_empty()
+        {
+            eprintln!();
+            eprint!("{rendered}");
         }
         std::process::exit(1);
     }
