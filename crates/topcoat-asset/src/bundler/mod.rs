@@ -17,11 +17,20 @@ use crate::{
 use self::cache::Cache;
 pub use self::error::{BundleError, BundleResult};
 
+/// Scans a built binary for [`asset!`](crate::asset) declarations and
+/// writes the referenced files into a bundle directory.
+///
+/// Local paths are copied; remote URLs are downloaded into `cache_dir`
+/// (and reused on subsequent runs). Output filenames include a short
+/// content hash, and the resulting directory is described by a
+/// [`Manifest`].
 pub struct Bundler {
     cache: Cache,
 }
 
 impl Bundler {
+    /// Create a bundler with a default `reqwest` client configured with
+    /// this crate's user agent.
     pub fn new(cache_dir: impl Into<PathBuf>) -> Self {
         let client = reqwest::Client::builder()
             .user_agent(concat!("topcoat-asset/", env!("CARGO_PKG_VERSION")))
@@ -30,6 +39,8 @@ impl Bundler {
         Self::with_client(cache_dir, client)
     }
 
+    /// Like [`Bundler::new`], but with a caller-supplied `reqwest::Client`
+    /// (for custom timeouts, proxies, auth, etc.).
     pub fn with_client(cache_dir: impl Into<PathBuf>, client: reqwest::Client) -> Self {
         Self {
             cache: Cache::new(cache_dir.into(), client),

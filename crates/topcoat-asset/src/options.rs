@@ -2,6 +2,12 @@ use std::borrow::Cow;
 
 use crate::cursor::{ConstReader, ConstWriter};
 
+/// Options that control how an asset is bundled.
+///
+/// Usually set via the [`asset!`](crate::asset) or
+/// [`asset_options!`](crate::asset_options) macros rather than
+/// constructed directly. See the [`asset!`](crate::asset) docs for what
+/// each field does.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AssetOptions {
     pub rename: Option<Cow<'static, str>>,
@@ -10,6 +16,7 @@ pub struct AssetOptions {
 }
 
 impl AssetOptions {
+    /// All options unset.
     pub const NONE: Self = Self {
         rename: None,
         extension: None,
@@ -51,6 +58,17 @@ const fn cow_as_str<'a>(c: &'a Option<Cow<'static, str>>) -> Option<&'a str> {
     }
 }
 
+/// Build an [`AssetOptions`] from a comma-separated list of fields.
+///
+/// Each field is either `name: "literal"` to set that option, or a bare
+/// `name` (which expects a const string in scope of the same name).
+/// Omitted fields stay `None`.
+///
+/// ```ignore
+/// use topcoat_asset::{asset_options, AssetOptions};
+///
+/// const OPTS: AssetOptions = asset_options!(rename: "primary", extension: "woff2");
+/// ```
 #[macro_export]
 macro_rules! asset_options {
     ($($field:ident $(: $expr:expr)?),*) => {{

@@ -9,6 +9,10 @@ use tower_service::Service;
 
 use crate::AssetBundle;
 
+/// `tower` service that serves the files in an [`AssetBundle`] over HTTP.
+///
+/// Only filenames present in the bundle are served; any other path
+/// receives a 404 (or is forwarded to the configured fallback, if any).
 #[derive(Clone, Debug)]
 pub struct ServeAssetBundle<F = DefaultServeDirFallback> {
     inner: ServeDir<F>,
@@ -16,6 +20,7 @@ pub struct ServeAssetBundle<F = DefaultServeDirFallback> {
 }
 
 impl ServeAssetBundle {
+    /// Build a service that serves `bundle`.
     pub fn new(bundle: &AssetBundle) -> Self {
         let files = bundle
             .assets()
@@ -29,6 +34,8 @@ impl ServeAssetBundle {
 }
 
 impl<F> ServeAssetBundle<F> {
+    /// Set a fallback service to handle requests for paths that aren't
+    /// part of the bundle.
     pub fn fallback<F2>(self, fallback: F2) -> ServeAssetBundle<F2> {
         ServeAssetBundle {
             inner: self.inner.fallback(fallback),

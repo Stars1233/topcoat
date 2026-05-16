@@ -2,6 +2,7 @@ use std::{fmt, path::PathBuf};
 
 use http::Uri;
 
+/// Where an asset's bytes come from: a local file or a remote URL.
 pub enum Source {
     Path(PathBuf),
     Url(Uri),

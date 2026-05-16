@@ -4,6 +4,7 @@ use crate::RawAsset;
 
 pub type Result = core::result::Result<(), AssetError>;
 
+/// Errors that can occur while reading assets or manifests.
 #[derive(Debug, thiserror::Error)]
 pub enum AssetError {
     #[error("io error for asset at {}: {source}", asset.source())]

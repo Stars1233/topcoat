@@ -10,11 +10,22 @@ use crate::{
     hash,
 };
 
+/// Compact identifier for an asset declared via [`asset!`](crate::asset).
+///
+/// `Asset` values are cheap to copy and store, and stable across runs as
+/// long as the declaring crate name, source file path, and asset path
+/// don't change. Use [`AssetBundle::get`](crate::AssetBundle::get) to
+/// resolve one back to a file.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct Asset(u64);
 
 impl Asset {
+    /// Build an `Asset` ID from the same inputs the [`asset!`](crate::asset)
+    /// macro uses.
+    ///
+    /// Prefer calling [`asset!`](crate::asset) directly; this is exposed
+    /// for tooling and tests that need to reconstruct an ID from its parts.
     pub const fn new(crate_name: &str, source_file: &str, path: &str) -> Self {
         let mut h = hash::fnv1a(crate_name.as_bytes());
         h = hash::fnv1a_continue(h, b"\0");
@@ -25,6 +36,11 @@ impl Asset {
     }
 }
 
+/// An asset declaration recovered from a compiled binary.
+///
+/// This is what the [`Bundler`](crate::Bundler) sees while scanning: the
+/// [`Asset`] ID together with the path, options, and the crate/source
+/// context needed to resolve relative paths back to real files.
 #[derive(Debug, Clone, PartialEq)]
 pub struct RawAsset {
     id: Asset,
@@ -75,6 +91,7 @@ impl RawAsset {
         &self.options
     }
 
+    /// Recover every embedded asset declaration from a compiled binary.
     pub fn find_in_binary(binary: &[u8]) -> Vec<Self> {
         let prefix = asset_prefix();
         let finder = memmem::Finder::new(&prefix);
@@ -171,6 +188,71 @@ fn normalize(path: &Path) -> PathBuf {
     out
 }
 
+/// Declare an asset and get back its [`Asset`] ID.
+///
+/// The first argument is the asset's source location, either a path or
+/// an `http(s)://` URL. Any remaining arguments configure
+/// [`AssetOptions`] using the same syntax as
+/// [`asset_options!`](crate::asset_options).
+///
+/// Because the macro expands to a `const` and a `#[used] static`, both
+/// the path and any options must be string literals (or other const
+/// expressions) — they cannot be computed at runtime.
+///
+/// # Path resolution
+///
+/// Local paths are resolved when the [`Bundler`](crate::Bundler) runs,
+/// not at macro-expansion time:
+///
+/// - Paths starting with `./` or `../` are anchored to the directory of
+///   the source file the macro was invoked in.
+/// - Other relative paths are anchored to the declaring crate's
+///   `CARGO_MANIFEST_DIR`.
+/// - Absolute paths are used as-is.
+/// - Strings parseable as `http://` or `https://` URIs are downloaded by
+///   the bundler and cached on disk.
+///
+/// # Options
+///
+/// Options control how the bundler names the output file and (optionally)
+/// pins its contents. All are optional:
+///
+/// - `rename: "name"` — replace the file stem (everything before the
+///   final `.`) with `"name"`.
+/// - `extension: "ext"` — override the output extension (without the
+///   leading dot). Useful when the source has no extension or a wrong one.
+/// - `hash: "<sha256-hex>"` — assert the bundled file's SHA-256. The
+///   bundler returns [`AssetError::HashMismatch`](crate::AssetError) if
+///   the file's actual hash differs. Recommended for remote assets.
+///
+/// Output filenames always include a short content hash so bundles stay
+/// cache-friendly: e.g. `logo-1a2b3c4d.png`, or `1a2b3c4d.png` if the
+/// stem is empty.
+///
+/// # Returns
+///
+/// A `const` [`Asset`] ID. The ID is stable across builds as long as the
+/// declaring crate, source file, and path string don't change — renaming
+/// the file on disk or changing options does *not* change the ID.
+///
+/// # Examples
+///
+/// ```ignore
+/// use topcoat_asset::{asset, Asset};
+///
+/// // Anchored to the crate root.
+/// const LOGO: Asset = asset!("assets/logo.png");
+///
+/// // Anchored to this source file's directory.
+/// const SHADER: Asset = asset!("./shaders/frag.wgsl");
+///
+/// // Remote asset with a pinned hash and a custom output name.
+/// const FONT: Asset = asset!(
+///     "https://example.com/font.woff2",
+///     rename: "primary",
+///     hash: "e3b0c44298fc1c149afbf4c8996fb924…",
+/// );
+/// ```
 #[macro_export]
 macro_rules! asset {
     ($path:expr $(, $($ao:tt)*)?) => {{
