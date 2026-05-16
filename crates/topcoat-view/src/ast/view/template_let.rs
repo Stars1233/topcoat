@@ -3,7 +3,10 @@ use syn::{
     parse::{Parse, ParseStream},
 };
 
-use crate::ast::{ParseOption, view::ViewWriter};
+use crate::ast::{
+    ParseOption,
+    view::{ViewWriter, WriteView},
+};
 
 /// A `let pat = expr;` binding in view-body position. The binding is in scope
 /// for all sibling nodes that follow it.
@@ -12,8 +15,8 @@ pub struct TemplateLet {
     pub semi_token: Token![;],
 }
 
-impl TemplateLet {
-    pub(crate) fn write(&self, writer: &mut ViewWriter) {
+impl WriteView for TemplateLet {
+    fn write(&self, writer: &mut ViewWriter) {
         writer.let_binding(&self.expr_let.pat, &self.expr_let.expr);
     }
 }

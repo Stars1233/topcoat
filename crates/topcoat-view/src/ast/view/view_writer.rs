@@ -2,6 +2,11 @@ use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::{Expr, Pat};
 
+/// AST nodes that can emit themselves into a [`ViewWriter`].
+pub(crate) trait WriteView {
+    fn write(&self, writer: &mut ViewWriter);
+}
+
 /// Builds the `TokenStream` that a `view!` invocation expands to.
 ///
 /// Adjacent literal markup is concatenated into `static_segment` and flushed as

@@ -8,7 +8,7 @@ use crate::ast::{
     ParseOption,
     view::{
         Component, DocumentType, Element, NodeBlock, TemplateBreak, TemplateContinue, TemplateExpr,
-        TemplateForLoop, TemplateIf, TemplateLet, TemplateMatch, ViewWriter,
+        TemplateForLoop, TemplateIf, TemplateLet, TemplateMatch, ViewWriter, WriteView,
     },
 };
 
@@ -30,7 +30,17 @@ pub enum Node {
 }
 
 impl Node {
-    pub(crate) fn write(&self, writer: &mut ViewWriter) {
+    /// Returns `true` if the node is [`Block`].
+    ///
+    /// [`Block`]: Node::Block
+    #[must_use]
+    pub fn is_block(&self) -> bool {
+        matches!(self, Self::Block(..))
+    }
+}
+
+impl WriteView for Node {
+    fn write(&self, writer: &mut ViewWriter) {
         match self {
             Self::Text(inner) => writer.write_str(&inner.value()),
             Self::DocumentType(inner) => inner.write(writer),
@@ -45,14 +55,6 @@ impl Node {
             Self::Match(inner) => inner.write(writer),
             Self::Block(inner) => inner.write(writer),
         }
-    }
-
-    /// Returns `true` if the node is [`Block`].
-    ///
-    /// [`Block`]: Node::Block
-    #[must_use]
-    pub fn is_block(&self) -> bool {
-        matches!(self, Self::Block(..))
     }
 }
 

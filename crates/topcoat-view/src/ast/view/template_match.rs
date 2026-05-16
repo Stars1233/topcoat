@@ -6,7 +6,7 @@ use syn::{
 
 use crate::ast::{
     ParseOption,
-    view::{MatchArmsBuilder, Node, ViewWriter},
+    view::{MatchArmsBuilder, ViewWriter, WriteView},
 };
 
 /// A `match expr { ... }` expression in view-body position.
@@ -17,8 +17,8 @@ pub struct TemplateMatch<B> {
     pub arms: Vec<TemplateMatchArm<B>>,
 }
 
-impl TemplateMatch<Node> {
-    pub(crate) fn write(&self, writer: &mut ViewWriter) {
+impl<B: WriteView> WriteView for TemplateMatch<B> {
+    fn write(&self, writer: &mut ViewWriter) {
         writer.match_expr(&self.expr, |arms| {
             for arm in &self.arms {
                 arm.write(arms);
@@ -87,7 +87,8 @@ pub struct TemplateMatchArm<B> {
     pub comma: Option<Token![,]>,
 }
 
-impl TemplateMatchArm<Node> {
+#[allow(private_bounds)]
+impl<B: WriteView> TemplateMatchArm<B> {
     pub(crate) fn write(&self, arms: &mut MatchArmsBuilder) {
         arms.arm(
             &self.pat,
@@ -124,7 +125,7 @@ impl<B: Parse> Parse for TemplateMatchArm<B> {
 }
 
 #[cfg(feature = "pretty")]
-impl topcoat_pretty::PrettyPrint for TemplateMatchArm<Node> {
+impl topcoat_pretty::PrettyPrint for TemplateMatchArm<crate::ast::view::Node> {
     fn pretty_print(&self, printer: &mut topcoat_pretty::Printer<'_>) {
         self.pat.pretty_print(printer);
         " ".pretty_print(printer);

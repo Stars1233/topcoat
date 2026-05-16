@@ -9,7 +9,7 @@ use syn::{
 
 use crate::ast::{
     ParseOption,
-    view::{Attributes, ClosingTag, ElementName, Node, OpeningTag, ViewWriter},
+    view::{Attributes, ClosingTag, ElementName, Node, OpeningTag, ViewWriter, WriteView},
 };
 
 /// An HTML element. `Void` covers the HTML void elements (`<br>`, `<img>`, …)
@@ -51,8 +51,10 @@ impl Element {
             Self::Void { .. } => &[],
         }
     }
+}
 
-    pub(crate) fn write(&self, writer: &mut ViewWriter) {
+impl WriteView for Element {
+    fn write(&self, writer: &mut ViewWriter) {
         match self {
             Self::Normal {
                 opening_tag,

@@ -3,7 +3,10 @@ use syn::{
     parse::{Parse, ParseStream},
 };
 
-use crate::ast::{ParseOption, view::ViewWriter};
+use crate::ast::{
+    ParseOption,
+    view::{ViewWriter, WriteView},
+};
 
 mod kw {
     use syn::custom_keyword;
@@ -21,8 +24,8 @@ pub struct DocumentType {
     pub gt_token: Token![>],
 }
 
-impl DocumentType {
-    pub(crate) fn write(&self, writer: &mut ViewWriter) {
+impl WriteView for DocumentType {
+    fn write(&self, writer: &mut ViewWriter) {
         writer.write_str_unescaped("<!DOCTYPE html>");
     }
 }

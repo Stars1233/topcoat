@@ -10,7 +10,7 @@ use syn::{
     token::Paren,
 };
 
-use crate::ast::view::{TemplateExpr, ViewWriter};
+use crate::ast::view::{TemplateExpr, ViewWriter, WriteView};
 
 /// The name appearing in an [`Element`](super::Element)'s tag. May be a plain
 /// identifier (`div`), a string literal (`"my-tag"`), or a parenthesized Rust
@@ -42,14 +42,6 @@ impl ElementName {
         }
     }
 
-    pub(crate) fn write(&self, writer: &mut ViewWriter) {
-        match self {
-            Self::Ident(inner) => writer.write_str_unescaped(&inner.to_string()),
-            Self::LitStr(inner) => writer.write_str_unescaped(&inner.value()),
-            Self::Expr(inner) => writer.write_expr(inner.expr.to_token_stream()),
-        }
-    }
-
     /// Returns `true` if this name is one of the HTML void elements (`br`,
     /// `img`, `input`, …) — those that take no closing tag and no children.
     /// Only matches identifier names; string and expression names always
@@ -75,6 +67,16 @@ impl ElementName {
         match self {
             Self::Expr(inner) => Some(&inner.expr),
             _ => None,
+        }
+    }
+}
+
+impl WriteView for ElementName {
+    fn write(&self, writer: &mut ViewWriter) {
+        match self {
+            Self::Ident(inner) => writer.write_str_unescaped(&inner.to_string()),
+            Self::LitStr(inner) => writer.write_str_unescaped(&inner.value()),
+            Self::Expr(inner) => writer.write_expr(inner.expr.to_token_stream()),
         }
     }
 }

@@ -5,7 +5,7 @@ use syn::{
 
 use crate::ast::{
     ParseOption,
-    view::{NodeBlock, ViewWriter},
+    view::{ViewWriter, WriteView},
 };
 
 /// A `for pat in expr { ... }` loop in view-body position. The body is
@@ -18,8 +18,8 @@ pub struct TemplateForLoop<B> {
     pub body: B,
 }
 
-impl TemplateForLoop<NodeBlock> {
-    pub(crate) fn write(&self, writer: &mut ViewWriter) {
+impl<B: WriteView> WriteView for TemplateForLoop<B> {
+    fn write(&self, writer: &mut ViewWriter) {
         writer.for_loop(&self.pat, &self.expr, |writer| {
             self.body.write(writer);
         });
@@ -65,8 +65,8 @@ pub struct TemplateContinue {
     pub semi_token: Token![;],
 }
 
-impl TemplateContinue {
-    pub(crate) fn write(&self, _writer: &mut ViewWriter) {
+impl WriteView for TemplateContinue {
+    fn write(&self, _writer: &mut ViewWriter) {
         todo!();
     }
 }
@@ -100,8 +100,8 @@ pub struct TemplateBreak {
     pub semi_token: Token![;],
 }
 
-impl TemplateBreak {
-    pub(crate) fn write(&self, _writer: &mut ViewWriter) {
+impl WriteView for TemplateBreak {
+    fn write(&self, _writer: &mut ViewWriter) {
         todo!();
     }
 }

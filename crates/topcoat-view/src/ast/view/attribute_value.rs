@@ -6,15 +6,18 @@ use syn::{
     token::Paren,
 };
 
-use crate::ast::view::{TemplateExpr, view_writer::ViewWriter};
+use crate::ast::view::{
+    TemplateExpr,
+    view_writer::{ViewWriter, WriteView},
+};
 
 pub enum AttributeValue {
     Expr(Box<TemplateExpr>),
     LitStr(LitStr),
 }
 
-impl AttributeValue {
-    pub(crate) fn write(&self, writer: &mut ViewWriter) {
+impl WriteView for AttributeValue {
+    fn write(&self, writer: &mut ViewWriter) {
         match self {
             Self::Expr(inner) => writer.write_expr(inner.expr.to_token_stream()),
             Self::LitStr(inner) => writer.write_str(&inner.value()),

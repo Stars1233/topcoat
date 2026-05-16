@@ -6,7 +6,7 @@ use syn::{
 
 use crate::ast::{
     ParseOption,
-    view::{Node, ViewWriter},
+    view::{Node, ViewWriter, WriteView},
 };
 
 /// A brace-delimited group of nodes: `{ ...nodes... }`. Used as the body of
@@ -16,8 +16,8 @@ pub struct NodeBlock {
     pub children: Vec<Node>,
 }
 
-impl NodeBlock {
-    pub(crate) fn write(&self, writer: &mut ViewWriter) {
+impl WriteView for NodeBlock {
+    fn write(&self, writer: &mut ViewWriter) {
         for child in &self.children {
             child.write(writer);
         }

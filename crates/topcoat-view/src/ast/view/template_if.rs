@@ -5,7 +5,7 @@ use syn::{
 
 use crate::ast::{
     ParseOption,
-    view::{NodeBlock, ViewWriter},
+    view::{ViewWriter, WriteView},
 };
 
 /// An `if cond { ... } else { ... }` chain in view-body position.
@@ -16,8 +16,8 @@ pub struct TemplateIf<B> {
     pub else_branch: Option<TemplateElse<B>>,
 }
 
-impl TemplateIf<NodeBlock> {
-    pub(crate) fn write(&self, writer: &mut ViewWriter) {
+impl<B: WriteView> WriteView for TemplateIf<B> {
+    fn write(&self, writer: &mut ViewWriter) {
         writer.if_else(&self.cond, |then_writer, else_writer| {
             self.then_branch.write(then_writer);
             if let Some(else_branch) = self.else_branch.as_ref() {
@@ -68,7 +68,7 @@ pub enum TemplateElse<B> {
     },
 }
 
-impl TemplateElse<NodeBlock> {
+impl<B: WriteView> WriteView for TemplateElse<B> {
     fn write(&self, writer: &mut ViewWriter) {
         match self {
             Self::ElseIf { template_if, .. } => template_if.write(writer),

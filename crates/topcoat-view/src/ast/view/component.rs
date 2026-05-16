@@ -10,7 +10,7 @@ use crate::ast::{
     ParseOption,
     view::{
         Attributes, ComponentClosingTag, ComponentOpeningTag, ComponentSelfClosingTag, Node,
-        ViewWriter,
+        ViewWriter, WriteView,
     },
 };
 
@@ -51,8 +51,10 @@ impl Component {
             Self::SelfClosing { .. } => &[],
         }
     }
+}
 
-    pub(crate) fn write(&self, writer: &mut ViewWriter) {
+impl WriteView for Component {
+    fn write(&self, writer: &mut ViewWriter) {
         let name = self.path();
         let fields = self.attributes().items.iter().map(|item| {
             let name = &item.name;

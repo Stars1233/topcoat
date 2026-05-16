@@ -6,7 +6,7 @@ use syn::{
 
 use crate::ast::{
     ParseOption,
-    view::{AttributeValue, ViewWriter},
+    view::{AttributeValue, ViewWriter, WriteView},
 };
 
 /// A single `name=value` attribute on an [`Element`](super::Element) or
@@ -17,8 +17,8 @@ pub struct Attribute {
     pub value: AttributeValue,
 }
 
-impl Attribute {
-    pub(crate) fn write(&self, writer: &mut ViewWriter) {
+impl WriteView for Attribute {
+    fn write(&self, writer: &mut ViewWriter) {
         let name = self.name.to_string();
         writer.write_str_unescaped(&name);
         writer.write_str_unescaped("=\"");
@@ -59,16 +59,18 @@ pub struct Attributes {
 }
 
 impl Attributes {
-    pub(crate) fn write(&self, writer: &mut ViewWriter) {
+    /// Returns `true` if `self` has no attributes.
+    pub fn is_empty(&self) -> bool {
+        self.items.is_empty()
+    }
+}
+
+impl WriteView for Attributes {
+    fn write(&self, writer: &mut ViewWriter) {
         for item in &self.items {
             writer.write_str_unescaped(" ");
             item.write(writer);
         }
-    }
-
-    /// Returns `true` if `self` has no attributes.
-    pub fn is_empty(&self) -> bool {
-        self.items.is_empty()
     }
 }
 
