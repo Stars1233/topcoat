@@ -111,14 +111,7 @@ pub enum ViewPart {
 /// [`ViewPart`] behind a `Box<dyn ...>`. A blanket impl covers every type
 /// that is `Fragment + Debug + Clone + Send + 'static`, so user code should
 /// rarely need to implement this trait directly.
-pub trait DynViewPart: fmt::Debug + Send {
-    /// Renders the underlying fragment. See [`Fragment::fmt`].
-    fn dyn_fmt(&self, cx: &Cx, f: &mut Formatter<'_>);
-
-    /// Returns the size hint of the underlying fragment. See
-    /// [`Fragment::size_hint`].
-    fn dyn_size_hint(&self) -> usize;
-
+pub trait DynViewPart: 'static + Fragment + fmt::Debug + Send {
     /// Clones the underlying value into a fresh `Box<dyn DynViewPart>`.
     ///
     /// Required because `dyn DynViewPart` cannot use the standard `Clone`
@@ -130,16 +123,6 @@ impl<T> DynViewPart for T
 where
     T: 'static + Fragment + fmt::Debug + Clone + Send,
 {
-    #[inline]
-    fn dyn_fmt(&self, cx: &Cx, f: &mut Formatter<'_>) {
-        Fragment::fmt(self, cx, f);
-    }
-
-    #[inline]
-    fn dyn_size_hint(&self) -> usize {
-        Fragment::size_hint(self)
-    }
-
     #[inline]
     fn clone_box(&self) -> Box<dyn DynViewPart> {
         Box::new(self.clone())
@@ -178,7 +161,7 @@ impl Fragment for ViewPart {
             Self::UnescapedString(inner) => inner.fmt(cx, f),
             Self::UnescapedStaticStr(inner) => inner.fmt(cx, f),
             Self::Attribute(inner) => inner.fmt(cx, f),
-            Self::BoxDyn(inner) => inner.dyn_fmt(cx, f),
+            Self::BoxDyn(inner) => Fragment::fmt(inner, cx, f),
             Self::Node(inner) => {
                 for part in inner.iter() {
                     part.fmt(cx, f);
@@ -211,7 +194,7 @@ impl Fragment for ViewPart {
             Self::UnescapedString(inner) => inner.len(),
             Self::UnescapedStaticStr(inner) => inner.len(),
             Self::Attribute(inner) => inner.size_hint(),
-            Self::BoxDyn(inner) => inner.dyn_size_hint(),
+            Self::BoxDyn(inner) => Fragment::size_hint(inner),
             Self::Node(inner) => inner.iter().map(|part| part.size_hint()).sum(),
         }
     }

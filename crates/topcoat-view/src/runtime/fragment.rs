@@ -142,7 +142,7 @@ macro_rules! impl_smart_pointer {
     ($name:ident) => {
         impl<T> Fragment for $name<T>
         where
-            T: Fragment,
+            T: Fragment + ?Sized,
         {
             #[inline]
             fn fmt(&self, cx: &Cx, f: &mut Formatter<'_>) {
