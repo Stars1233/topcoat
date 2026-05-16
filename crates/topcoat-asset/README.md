@@ -31,7 +31,7 @@ Bundler::new("target/asset-cache")
     .await?;
 
 // Runtime: load the bundle and resolve IDs back to files.
-let bundle = AssetBundle::load("dist/assets")?;
+let bundle = AssetBundle::load_dir("dist/assets")?;
 let path = bundle.get(LOGO).unwrap().path();
 ```
 
@@ -76,7 +76,7 @@ With the `tower` feature (enabled by default), `ServeAssetBundle` exposes a bund
 ```rust
 use topcoat_asset::{AssetBundle, ServeAssetBundle};
 
-let bundle = AssetBundle::load("dist/assets")?;
+let bundle = AssetBundle::load_dir("dist/assets")?;
 let service = ServeAssetBundle::new(&bundle);
 // Mount at /assets in your axum/tower app.
 ```

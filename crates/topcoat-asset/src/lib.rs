@@ -31,7 +31,7 @@
 //!     .await?;
 //!
 //! // Runtime: resolve IDs back to on-disk files.
-//! let bundle = AssetBundle::load("dist/assets")?;
+//! let bundle = AssetBundle::load_dir("dist/assets")?;
 //! let path = bundle.get(LOGO).unwrap().path();
 //! ```
 

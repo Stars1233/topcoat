@@ -31,7 +31,7 @@ impl BundledAsset {
 /// [`Asset`] IDs to those files.
 ///
 /// Built by the [`Bundler`](crate::Bundler) and loaded at runtime via
-/// [`AssetBundle::load`].
+/// [`AssetBundle::load_dir`].
 #[derive(Debug, Default, Clone)]
 pub struct AssetBundle {
     dir: PathBuf,
@@ -45,7 +45,7 @@ impl AssetBundle {
     }
 
     /// Load a bundle by reading the `manifest.toml` in `dir`.
-    pub fn load(dir: impl AsRef<Path>) -> io::Result<Self> {
+    pub fn load_dir(dir: impl AsRef<Path>) -> io::Result<Self> {
         let dir = dir.as_ref().to_path_buf();
         let manifest = Manifest::load(dir.join(MANIFEST_NAME))?;
 
