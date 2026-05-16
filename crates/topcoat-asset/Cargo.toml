@@ -5,7 +5,11 @@ edition = "2024"
 
 [features]
 default = ["tower"]
-bundler = ["dep:reqwest", "dep:tokio"]
+
+bundler = [
+	"dep:reqwest",
+	"dep:tokio",
+]
 tower = [
 	"dep:pin-project-lite",
 	"dep:tower-http",
