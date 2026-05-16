@@ -4,20 +4,20 @@ use proc_macro2::Span;
 use quote::ToTokens;
 use syn::{
     Expr, Ident, LitStr,
-    ext::IdentExt,
     parse::{Parse, ParseStream},
     spanned::Spanned,
     token::Paren,
 };
 
-use crate::ast::view::{TemplateExpr, ViewWriter, WriteView};
+use crate::ast::view::{HtmlIdent, TemplateExpr, ViewWriter, WriteView};
 
-/// The name appearing in an [`Element`](super::Element)'s tag. May be a plain
-/// identifier (`div`), a string literal (`"my-tag"`), or a parenthesized Rust
-/// expression that resolves to the tag name at runtime.
+/// The name appearing in an [`Element`](super::Element)'s tag. May be an HTML
+/// identifier (`div`, `data-foo`, `xmlns:xlink`), a string literal
+/// (`"my-tag"`), or a parenthesized Rust expression that resolves to the tag
+/// name at runtime.
 #[derive(Debug, PartialEq)]
 pub enum ElementName {
-    Ident(Ident),
+    Ident(HtmlIdent),
     LitStr(LitStr),
     Expr(Box<TemplateExpr>),
 }
@@ -53,8 +53,8 @@ impl ElementName {
         ];
 
         match self {
-            Self::Ident(inner) => {
-                let name = inner.to_string();
+            Self::Ident(inner) if inner.rest.is_empty() => {
+                let name = inner.first.to_string();
                 VOID_ELEMENTS.iter().any(|v| *v == name)
             }
             _ => false,
@@ -95,7 +95,7 @@ impl Parse for ElementName {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let lookahead = input.lookahead1();
         if lookahead.peek(Ident) {
-            Ok(Self::Ident(input.call(Ident::parse_any)?))
+            Ok(Self::Ident(input.parse()?))
         } else if lookahead.peek(LitStr) {
             Ok(Self::LitStr(input.parse()?))
         } else if lookahead.peek(Paren) {
@@ -130,6 +130,29 @@ mod tests {
         let name = parse("div");
         assert_eq!(name.string_name().as_deref(), Some("div"));
         assert!(name.expr().is_none());
+    }
+
+    #[test]
+    fn html_ident_name_with_separators() {
+        assert_eq!(
+            parse("my-component").string_name().as_deref(),
+            Some("my-component"),
+        );
+        assert_eq!(
+            parse("xmlns:xlink").string_name().as_deref(),
+            Some("xmlns:xlink"),
+        );
+        assert_eq!(
+            parse("data-foo-bar").string_name().as_deref(),
+            Some("data-foo-bar"),
+        );
+    }
+
+    #[test]
+    fn html_ident_void_check_ignores_multi_segment_names() {
+        // A multi-segment HTML identifier whose first segment matches a void
+        // element name should not be treated as void.
+        assert!(!parse("br-custom").is_void_element());
     }
 
     #[test]

@@ -14,18 +14,21 @@ use crate::ast::ParseOption;
 /// or `.` with no intervening whitespace. Covers names like `data-foo`,
 /// `aria-label`, `xmlns:xlink`, or `class.active` that are valid in HTML but
 /// not valid Rust identifiers.
+#[derive(Debug, PartialEq)]
 pub struct HtmlIdent {
     pub first: Ident,
     pub rest: Vec<HtmlIdentSegment>,
 }
 
 /// A trailing `<sep><ident>` segment of an [`HtmlIdent`].
+#[derive(Debug, PartialEq)]
 pub struct HtmlIdentSegment {
     pub separator: HtmlIdentSeparator,
     pub ident: Ident,
 }
 
 /// The character joining two segments of an [`HtmlIdent`].
+#[derive(Debug, PartialEq)]
 pub enum HtmlIdentSeparator {
     Dash(Token![-]),
     Colon(Token![:]),
@@ -33,9 +36,15 @@ pub enum HtmlIdentSeparator {
 }
 
 impl HtmlIdent {
-    /// The identifier rendered as it would appear in the source HTML.
-    pub fn to_html_string(&self) -> String {
-        self.to_string()
+    /// The source span covering the identifier. Falls back to the first
+    /// segment's span when the underlying [`Span::join`] is unavailable (i.e.
+    /// on stable Rust outside of `proc_macro2`'s fallback mode).
+    pub fn span(&self) -> Span {
+        let first = self.first.span();
+        match self.rest.last() {
+            Some(segment) => first.join(segment.ident.span()).unwrap_or(first),
+            None => first,
+        }
     }
 }
 
