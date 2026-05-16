@@ -42,7 +42,11 @@ async fn layout(cx: &Cx, slot: Slot<'_>) -> Result {
                     <a href="/about">"about"</a>
                     <span class=("test")>" | "</span>
                     <a href="/contact">"contact"</a>
-                    <span>
+                    <span
+                        for kek in ["kek", "pip", "lel"] {
+                            lel=(kek)
+                        }
+                    >
                         " | signed in as "
                         ((*user).clone())
                     </span>

@@ -20,6 +20,7 @@ pub struct Attribute {
 impl WriteView for Attribute {
     fn write(&self, writer: &mut ViewWriter) {
         let name = self.name.to_string();
+        writer.write_str_unescaped(" ");
         writer.write_str_unescaped(&name);
         writer.write_str_unescaped("=\"");
         self.value.write(writer);
@@ -50,50 +51,5 @@ impl topcoat_pretty::PrettyPrint for Attribute {
         self.name.pretty_print(printer);
         self.eq.pretty_print(printer);
         self.value.pretty_print(printer);
-    }
-}
-
-/// The full list of attributes attached to a single tag.
-pub struct Attributes {
-    pub items: Vec<Attribute>,
-}
-
-impl Attributes {
-    /// Returns `true` if `self` has no attributes.
-    pub fn is_empty(&self) -> bool {
-        self.items.is_empty()
-    }
-}
-
-impl WriteView for Attributes {
-    fn write(&self, writer: &mut ViewWriter) {
-        for item in &self.items {
-            writer.write_str_unescaped(" ");
-            item.write(writer);
-        }
-    }
-}
-
-impl Parse for Attributes {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        let mut items = Vec::new();
-        while let Some(attribute) = input.call(Attribute::parse_option)? {
-            items.push(attribute);
-        }
-        Ok(Self { items })
-    }
-}
-
-#[cfg(feature = "pretty")]
-impl topcoat_pretty::PrettyPrint for Attributes {
-    fn pretty_print(&self, printer: &mut topcoat_pretty::Printer<'_>) {
-        if self.items.is_empty() {
-            return;
-        }
-        for item in &self.items {
-            printer.scan_break();
-            " ".pretty_print(printer);
-            item.pretty_print(printer);
-        }
     }
 }

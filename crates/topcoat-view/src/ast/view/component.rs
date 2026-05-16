@@ -9,8 +9,8 @@ use syn::{
 use crate::ast::{
     ParseOption,
     view::{
-        Attributes, ComponentClosingTag, ComponentOpeningTag, ComponentSelfClosingTag, Node,
-        ViewWriter, WriteView,
+        AttributeNode, Attributes, ComponentClosingTag, ComponentOpeningTag,
+        ComponentSelfClosingTag, Node, ViewWriter, WriteView,
     },
 };
 
@@ -56,10 +56,13 @@ impl Component {
 impl WriteView for Component {
     fn write(&self, writer: &mut ViewWriter) {
         let name = self.path();
-        let fields = self.attributes().items.iter().map(|item| {
-            let name = &item.name;
-            let value = &item.value;
-            quote! { #name: #value }
+        let fields = self.attributes().items.iter().filter_map(|item| match item {
+            AttributeNode::Attribute(attr) => {
+                let name = &attr.name;
+                let value = &attr.value;
+                Some(quote! { #name: #value })
+            }
+            _ => None,
         });
         let mut child_writer = ViewWriter::new_nested();
         for child in self.children() {
@@ -218,7 +221,10 @@ mod tests {
         let component = parse(r#"[button label="ok" /]"#);
         let attrs = component.attributes();
         assert_eq!(attrs.items.len(), 1);
-        assert_eq!(attrs.items[0].name.to_string(), "label");
+        let AttributeNode::Attribute(attr) = &attrs.items[0] else {
+            panic!("expected Attribute variant");
+        };
+        assert_eq!(attr.name.to_string(), "label");
     }
 
     #[test]
