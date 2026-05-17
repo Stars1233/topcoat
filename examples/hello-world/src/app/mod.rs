@@ -89,6 +89,7 @@ mod about {
                     rename : "rust"
                 ))
             >
+            <img src=(asset!("./ferris.png"))>
         }
     }
 }
