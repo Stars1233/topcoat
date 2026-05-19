@@ -1,6 +1,7 @@
 use std::{
     any::Any,
     collections::HashSet,
+    fmt::Display,
     hash::{Hash, Hasher},
     pin::Pin,
 };
@@ -9,6 +10,19 @@ use topcoat_core::context::Cx;
 
 use crate::runtime::{EncodedSignals, Signals, View};
 
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+pub struct IslandId(&'static str);
+
+impl IslandId {
+    pub const fn new(inner: &'static str) -> Self {
+        Self(inner)
+    }
+
+    pub fn as_str(&self) -> &str {
+        self.0
+    }
+}
+
 pub type IslandRenderFn<S, E> =
     for<'cx> fn(
         cx: &'cx Cx,
@@ -16,12 +30,17 @@ pub type IslandRenderFn<S, E> =
     ) -> Pin<Box<dyn Future<Output = Result<View, E>> + Send + 'cx>>;
 
 pub struct Island<S, E> {
+    id: IslandId,
     render: IslandRenderFn<S, E>,
 }
 
 impl<S, E> Island<S, E> {
-    pub const fn new(render: IslandRenderFn<S, E>) -> Self {
-        Self { render }
+    pub const fn new(id: IslandId, render: IslandRenderFn<S, E>) -> Self {
+        Self { id, render }
+    }
+
+    pub fn id(&self) -> IslandId {
+        self.id
     }
 
     pub async fn render(&self, cx: &Cx, signals: S) -> Result<View, E> {
@@ -30,6 +49,7 @@ impl<S, E> Island<S, E> {
 }
 
 pub trait DynIsland: Send + Sync + 'static {
+    fn id(&self) -> IslandId;
     fn dyn_render<'cx>(
         &'static self,
         cx: &'cx Cx,
@@ -42,6 +62,10 @@ where
     S: Signals + Send + Sync + 'static,
     E: Send + Sync + 'static,
 {
+    fn id(&self) -> IslandId {
+        self.id
+    }
+
     fn dyn_render<'cx>(
         &'static self,
         cx: &'cx Cx,

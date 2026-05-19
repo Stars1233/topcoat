@@ -7,6 +7,7 @@ pub use item::*;
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::{FnArg, Pat, ReturnType, Type};
+use uuid::Uuid;
 
 use crate::ast::island::{IslandAttr, IslandItem};
 
@@ -51,12 +52,15 @@ impl ToTokens for Island {
             ReturnType::Default => unreachable!(),
         };
 
+        let id = Uuid::new_v4().to_string();
+
         quote! {
             #[allow(non_upper_case_globals)]
             const #ident: ::topcoat::view::Island<
                 (#(#signal_types,)*),
                 <#return_ty as ::topcoat::internal::ResultExt>::E,
             > = ::topcoat::view::Island::new(
+                ::topcoat::view::IslandId::new(#id),
                 |cx, signals| {
                     #item
 

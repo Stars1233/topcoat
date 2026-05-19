@@ -6,9 +6,11 @@ use axum::{
 };
 use topcoat_asset::{AssetBundle, AssetFragmentResolver, ServeAssetBundle};
 use topcoat_core::context::{MaybeAborted, State, WatchAbort};
-use topcoat_view::runtime::{DynIsland, Islands};
+use topcoat_view::runtime::{DynIsland, EncodedSignals, Islands};
 
-use crate::{CxBody, Layout, Layouts, Page, Pages, Route, Routes, not_found};
+use crate::{
+    CxBody, Error, Layout, Layouts, Page, Pages, Route, Routes, not_found, raw_path_params,
+};
 
 /// The core routing primitive that collects [`Page`]s, [`Layout`]s, and
 /// [`Route`]s, matches layouts to pages by path prefix, and converts into an
@@ -249,6 +251,35 @@ impl From<Router> for axum::Router {
                 ),
             );
         }
+
+        let mut island_router = axum::Router::new();
+        for island in value.islands {
+            island_router = island_router.route(
+                &("/".to_owned() + island.id().as_str()),
+                get(async |CxBody { cx, body: _ }: CxBody| {
+                    let signal_param = raw_path_params(&cx)
+                        .iter()
+                        .find_map(|(key, value)| (key == "signals").then_some(value))
+                        .unwrap();
+                    // todo: handle errors properly
+
+                    let result = island
+                        .dyn_render(&cx, EncodedSignals::new(signal_param))
+                        .await;
+                    match result {
+                        Ok(view) => Html(view.render(&cx)).into_response(),
+                        Err(error) => {
+                            if let Ok(error) = error.downcast::<Error>() {
+                                error.into_response()
+                            } else {
+                                panic!("island has unknown error type");
+                            }
+                        }
+                    }
+                }),
+            );
+        }
+        axum_router = axum_router.nest("/_topcoat/islands", island_router);
 
         axum_router = axum_router
             .fallback(async move |CxBody { cx: _, body: _ }: CxBody| not_found().into_response());
