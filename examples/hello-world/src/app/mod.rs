@@ -38,6 +38,7 @@ async fn layout(cx: &Cx, slot: Slot<'_>) -> Result {
                 <link rel="stylesheet" href=(tailwind::stylesheet!())>
                 <script type="module" src=(asset!("https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.1/bundles/datastar.js"))></script>
                 <script type="module" src=(asset!("./runtime.js"))></script>
+                <script type="module" src=(topcoat::runtime::SCRIPT)></script>
                 [topcoat::dev::script /]
             </head>
             <body>

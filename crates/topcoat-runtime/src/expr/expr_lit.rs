@@ -1,4 +1,4 @@
-use crate::runtime::{Expr, Interpreter, IntoExpr};
+use crate::{Expr, Interpreter, IntoExpr};
 
 pub struct ExprLit<T>(T);
 

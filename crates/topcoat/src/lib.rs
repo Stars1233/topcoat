@@ -34,6 +34,11 @@ pub mod view {
 #[cfg(feature = "router")]
 pub use serve::serve;
 
+#[cfg(feature = "runtime")]
+pub mod runtime {
+    pub use topcoat_runtime::*;
+}
+
 #[cfg(feature = "tailwind")]
 pub mod tailwind {
     pub use topcoat_tailwind::*;
