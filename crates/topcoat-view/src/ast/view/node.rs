@@ -67,8 +67,6 @@ impl Parse for Node {
             Self::DocumentType(input.parse()?)
         } else if Element::peek(input) {
             Self::Element(input.parse()?)
-        } else if Component::peek(input) {
-            Self::Component(input.parse()?)
         } else if TemplateExpr::peek(input) {
             Self::Expr(input.parse()?)
         } else if TemplateIf::<Node>::peek(input) {
@@ -85,6 +83,8 @@ impl Parse for Node {
             Self::Match(input.parse()?)
         } else if TemplateBlock::<Node>::peek(input) {
             Self::Block(input.parse()?)
+        } else if Component::peek(input) {
+            Self::Component(input.parse()?)
         } else {
             return Err(syn::Error::new(input.span(), "expected view node"));
         };
@@ -143,7 +143,7 @@ mod tests {
         assert!(matches!(parse(r#""hi""#), Node::Text(_)));
         assert!(matches!(parse("<!DOCTYPE html>"), Node::DocumentType(_)));
         assert!(matches!(parse("<br>"), Node::Element(_)));
-        assert!(matches!(parse("[foo /]"), Node::Component(_)));
+        assert!(matches!(parse("foo()"), Node::Component(_)));
         assert!(matches!(parse("(value)"), Node::Expr(_)));
         assert!(matches!(parse(r#"if a { "x" }"#), Node::If(_)));
         assert!(matches!(parse(r#"let a = 1;"#), Node::Let(_)));

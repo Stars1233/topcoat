@@ -1,1 +1,1 @@
-view! { [MyComponent /] }
+view! { MyComponent() }
