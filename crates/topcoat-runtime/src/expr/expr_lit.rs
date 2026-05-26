@@ -1,17 +1,24 @@
 use serde::Serialize;
 
-use crate::{Expr, Interpreter, IntoExpr};
+use crate::{Expr, Interpreter, IntoExpr, Value};
 
 pub struct ExprLit<T>(T);
 
+impl<T> ExprLit<T> {
+    pub fn new(inner: T) -> Self {
+        Self(inner)
+    }
+}
+
 impl<T> Expr for ExprLit<T>
 where
-    T: Serialize,
+    T: Serialize + Value,
+    T::Surrogate: Copy,
 {
-    type Output = T;
+    type Output = T::Surrogate;
 
     fn eval(self, _interpreter: &mut Interpreter) -> Self::Output {
-        self.0
+        *self.0.ref_cast()
     }
 
     fn to_js(&self, out: &mut String) {
@@ -26,12 +33,10 @@ macro_rules! impl_primitive {
             type Expr = ExprLit<Self>;
 
             fn into_expr(self) -> Self::Expr {
-                ExprLit(self)
+                ExprLit::new(self)
             }
         }
     };
 }
 
-impl_primitive!(bool);
-impl_primitive!(f64);
 impl_primitive!(&'static str);

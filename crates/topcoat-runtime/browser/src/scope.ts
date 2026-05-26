@@ -55,7 +55,7 @@ export class Scope {
 }
 
 /**
- * A reactive scope: a region delimited by `<!-- reactive scope start/end -->`
+ * A reactive scope: a region delimited by `<!-- ::topcoat::scope::start/end -->`
  * comments whose content is re-fetched from the server whenever any tracked
  * signal changes.
  *

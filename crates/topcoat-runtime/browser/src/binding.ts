@@ -36,7 +36,6 @@ export function setupBinding(el: Element, attr: Attr, scope: Scope): void {
 function write(el: Element, name: string, value: unknown): void {
 	if (PROPERTY_NAMES.has(name)) {
 		(el as unknown as Record<string, unknown>)[name] = value;
-		return;
 	}
 	if (value == null || value === false) {
 		el.removeAttribute(name);

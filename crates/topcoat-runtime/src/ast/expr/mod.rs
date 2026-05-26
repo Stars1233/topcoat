@@ -3,6 +3,7 @@ mod expr_closure;
 mod expr_deref;
 mod expr_field;
 mod expr_ident;
+mod expr_lit;
 mod expr_method_call;
 
 pub use expr_assign_deref::*;
@@ -10,6 +11,7 @@ pub use expr_closure::*;
 pub use expr_deref::*;
 pub use expr_field::*;
 pub use expr_ident::*;
+pub use expr_lit::*;
 pub use expr_method_call::*;
 
 use proc_macro2::TokenStream;
@@ -32,23 +34,22 @@ pub struct BoundParam {
 /// translated into a tree of runtime expression nodes; anything outside that
 /// whitelist is rejected at compile time.
 pub enum Expr {
-    Ident(ExprIdent),
-    Deref(ExprDeref),
-    Field(ExprField),
-    MethodCall(ExprMethodCall),
     AssignDeref(ExprAssignDeref),
     Closure(ExprClosure),
+    Deref(ExprDeref),
+    Field(ExprField),
+    Ident(ExprIdent),
+    Lit(ExprLit),
+    MethodCall(ExprMethodCall),
 }
 
 impl Expr {
     fn from_syn(expr: syn::Expr) -> syn::Result<Self> {
         match expr {
+            syn::Expr::Lit(lit) => Ok(Self::Lit(ExprLit::new(lit.lit))),
             syn::Expr::Path(path) => {
                 let Some(ident) = path.path.get_ident() else {
-                    return Err(syn::Error::new_spanned(
-                        path,
-                        "expected a bare identifier",
-                    ));
+                    return Err(syn::Error::new_spanned(path, "expected a bare identifier"));
                 };
                 Ok(Self::Ident(ExprIdent::new(ident.clone())))
             }
@@ -150,12 +151,13 @@ impl Parse for Expr {
 impl ToTokens for Expr {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         match self {
-            Self::Ident(node) => node.to_tokens(tokens),
-            Self::Deref(node) => node.to_tokens(tokens),
-            Self::Field(node) => node.to_tokens(tokens),
-            Self::MethodCall(node) => node.to_tokens(tokens),
             Self::AssignDeref(node) => node.to_tokens(tokens),
             Self::Closure(node) => node.to_tokens(tokens),
+            Self::Deref(node) => node.to_tokens(tokens),
+            Self::Field(node) => node.to_tokens(tokens),
+            Self::Ident(node) => node.to_tokens(tokens),
+            Self::Lit(node) => node.to_tokens(tokens),
+            Self::MethodCall(node) => node.to_tokens(tokens),
         }
     }
 }
@@ -209,7 +211,10 @@ mod tests {
 
     #[test]
     fn parses_closure() {
-        assert!(matches!(parse("|e| *kek = e.target.value"), Expr::Closure(_)));
+        assert!(matches!(
+            parse("|e| *kek = e.target.value"),
+            Expr::Closure(_)
+        ));
     }
 
     #[test]

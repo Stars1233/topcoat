@@ -15,8 +15,12 @@ pub struct String {
 }
 
 impl String {
+    pub(crate) fn new(inner: StdString) -> Self {
+        Self { inner }
+    }
+
     #[ref_cast_custom]
-    fn new(s: &StdString) -> &Self;
+    fn ref_cast(s: &StdString) -> &Self;
 
     #[allow(clippy::should_implement_trait)]
     pub fn clone(&self) -> Self {
@@ -38,9 +42,7 @@ impl JsCallable for String {
             // Strings are value-typed in JS; `.clone()` is the identity, so
             // we append nothing to the already-emitted receiver.
             "clone" => {}
-            other => unreachable!(
-                "method `{other}` reached JS codegen but is not implemented for runtime `String`"
-            ),
+            _ => unreachable!(),
         }
     }
 }
@@ -49,6 +51,6 @@ impl Value for StdString {
     type Surrogate = String;
 
     fn ref_cast(&self) -> &Self::Surrogate {
-        Self::Surrogate::new(self)
+        Self::Surrogate::ref_cast(self)
     }
 }
