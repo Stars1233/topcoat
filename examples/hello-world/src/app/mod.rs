@@ -163,7 +163,7 @@ async fn combobox(content: Island<(ReadSignal<String>,), topcoat::router::Error>
             <input
                 :value=({
                     let x = 5.0;
-                    x + 6.0 + smep + 7.0
+                    x * 6.0 + smep * 7.0
                 })
                 // @change=(|e| kek.with(|v| v.pip.update() = 5; ))
             >

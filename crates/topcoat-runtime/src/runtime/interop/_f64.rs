@@ -10,7 +10,7 @@ impl Interop for core::primitive::f64 {
     type Surrogate = f64;
 
     fn to_js(&self, out: &mut String) {
-        write!(out, "{self}").unwrap();
+        write!(out, "__context.builtin.f64({self})").unwrap();
     }
 
     fn into_surrogate(self) -> Self::Surrogate {
