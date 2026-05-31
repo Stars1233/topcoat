@@ -1,8 +1,10 @@
+use std::fmt::Write;
+
 use ref_cast::RefCast;
 
-use crate::runtime::{Surrogated, impl_surrogate, impl_surrogate_mut, impl_surrogate_ref};
+use crate::runtime::{Surrogated, ToJs, impl_surrogate, impl_surrogate_mut, impl_surrogate_ref};
 
-#[derive(RefCast, Clone, Copy)]
+#[derive(Debug, RefCast, Clone, Copy)]
 #[repr(transparent)]
 #[allow(non_camel_case_types)]
 pub struct f64(core::primitive::f64);
@@ -17,6 +19,12 @@ impl f64 {
 impl_surrogate!(core::primitive::f64, f64);
 impl_surrogate_ref!(core::primitive::f64, f64);
 impl_surrogate_mut!(core::primitive::f64, f64);
+
+impl ToJs for f64 {
+    fn to_js(&self, out: &mut String) {
+        let _ = write!(out, "__cx.builtin.f64({self})");
+    }
+}
 
 macro_rules! impl_binary_op {
     ($trait:ident, $method:ident, $op:tt) => {
@@ -35,3 +43,9 @@ impl_binary_op!(Add, add, +);
 impl_binary_op!(Sub, sub, -);
 impl_binary_op!(Mul, mul, *);
 impl_binary_op!(Div, div, /);
+
+impl std::fmt::Display for f64 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}

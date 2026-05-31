@@ -23,7 +23,7 @@ export function setupBinding(el: Element, attr: Attr, scope: Scope): void {
 	if (!attr.name.startsWith(BIND_PREFIX)) return;
 
 	const name = attr.name.substring(BIND_PREFIX.length);
-	const compute = new Function("__context", `return ${attr.value};`) as Compute;
+	const compute = new Function("__cx", `return ${attr.value};`) as Compute;
 
 	const { context } = scope.runtime;
 	scope.run(() => {

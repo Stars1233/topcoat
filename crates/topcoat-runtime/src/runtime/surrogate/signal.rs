@@ -1,6 +1,10 @@
+use std::fmt::Write;
+
 use ref_cast::RefCast;
 
-use crate::runtime::{Signal, Surrogated, impl_surrogate, impl_surrogate_ref};
+use crate::runtime::{
+    Signal, Surrogated, ToJs, impl_surrogate, impl_surrogate_mut, impl_surrogate_ref,
+};
 
 #[derive(RefCast, Clone, Copy)]
 #[repr(transparent)]
@@ -23,9 +27,17 @@ where
     }
 
     pub fn set(&self, _v: T::Surrogate) {
-        panic!("signals cannot be written to inside of a server-side expression");
+        panic!("expressions in which a signal is written to cannot be run server-side");
     }
 }
 
 impl_surrogate!({'a, T} Signal<'a, T>, WriteSignal<'a, T>);
 impl_surrogate_ref!({'a, T} Signal<'a, T>, WriteSignal<'a, T>);
+impl_surrogate_mut!({'a, T} Signal<'a, T>, WriteSignal<'a, T>);
+
+impl<'a, T> ToJs for WriteSignal<'a, T> {
+    fn to_js(&self, out: &mut String) {
+        let id = self.0.id();
+        let _ = write!(out, "__cx.signal(\"{id}\")");
+    }
+}

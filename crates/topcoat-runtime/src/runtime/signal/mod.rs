@@ -28,6 +28,12 @@ impl Default for SignalId {
     }
 }
 
+impl std::fmt::Display for SignalId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
 #[derive(Debug, Clone, Copy, Serialize)]
 pub struct Signal<'a, T> {
     id: SignalId,

@@ -11,6 +11,10 @@ pub trait Surrogated {
     fn from_surrogate(surrogate: Self::Surrogate) -> Self;
 }
 
+pub trait ToJs {
+    fn to_js(&self, out: &mut String);
+}
+
 macro_rules! impl_surrogate {
     (
         $({$($g:tt)*})? $real:ty, $surrogate:ty

@@ -3,7 +3,10 @@ use quote::{ToTokens, quote};
 use std::fmt::Write;
 use syn::{ExprLit, Lit};
 
-use crate::{ast::expr::Expr, runtime::Surrogated};
+use crate::{
+    ast::expr::Expr,
+    runtime::{Surrogated, ToJs},
+};
 
 impl Expr {
     pub(super) fn expr_lit(
@@ -13,16 +16,16 @@ impl Expr {
     ) -> syn::Result<()> {
         match &lit.lit {
             Lit::Float(inner) => {
-                quote! { ::topcoat::runtime::Interop::into_surrogate(#inner) }.to_tokens(rust);
+                quote! { ::topcoat::runtime::Surrogated::into_surrogate(#inner) }.to_tokens(rust);
                 let value: f64 = inner.base10_parse()?;
-                value.to_js(js);
+                value.into_surrogate().to_js(js);
             }
             Lit::Bool(inner) => {
-                quote! { ::topcoat::runtime::Interop::into_surrogate(#inner) }.to_tokens(rust);
+                quote! { ::topcoat::runtime::Surrogated::into_surrogate(#inner) }.to_tokens(rust);
                 write!(js, "{}", inner.value).unwrap();
             }
             Lit::Str(inner) => {
-                quote! { ::topcoat::runtime::Interop::into_surrogate(#inner) }.to_tokens(rust);
+                quote! { ::topcoat::runtime::Surrogated::into_surrogate(#inner) }.to_tokens(rust);
                 js.push_str(&serde_json::to_string(&inner.value()).unwrap());
             }
             other => return Err(syn::Error::new_spanned(other, "unsupported literal type")),
