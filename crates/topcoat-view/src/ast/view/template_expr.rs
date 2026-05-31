@@ -7,7 +7,7 @@ use syn::{
 
 use crate::ast::{
     ParseOption,
-    view::{ViewWriter, WriteView},
+    view::{ExprKind, ViewWriter, WriteView},
 };
 
 /// A parenthesized Rust expression embedded as a child node, e.g. `(5 + 6)`.
@@ -20,7 +20,7 @@ pub struct TemplateExpr {
 impl WriteView for TemplateExpr {
     fn write(&self, writer: &mut ViewWriter) {
         let expr = &self.expr;
-        writer.write_expr(expr.to_token_stream());
+        writer.write_expr(ExprKind::Node, expr.to_token_stream());
     }
 }
 

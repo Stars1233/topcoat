@@ -1,5 +1,4 @@
 use core::fmt;
-use std::iter::once;
 
 use topcoat_core::context::Cx;
 
@@ -33,8 +32,11 @@ pub struct View {
 impl View {
     /// Builds a `View` from any value that can be converted into [`ViewPart`]s.
     #[inline]
-    pub fn new(parts: impl IntoViewParts) -> Self {
-        parts.into_view_parts().collect()
+    pub fn new(part: ViewPart) -> Self {
+        Self {
+            size_hint: part.size_hint(),
+            part,
+        }
     }
 
     /// Returns a `View` that renders to an empty string.
@@ -58,10 +60,6 @@ impl View {
         let mut f = Formatter::new(&mut buf);
         self.fmt(cx, &mut f);
         buf
-    }
-
-    pub fn into_inner(self) -> ViewPart {
-        self.part
     }
 }
 
@@ -119,30 +117,61 @@ impl FromIterator<ViewPart> for View {
 /// with [`Node`](Self::Node). Like [`View`], `ViewPart`s are inert until
 /// rendered.
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub enum ViewPart {
+    #[non_exhaustive]
     Empty,
+    #[non_exhaustive]
     Bool(bool),
+    #[non_exhaustive]
     Char(char),
+    #[non_exhaustive]
     I8(i8),
+    #[non_exhaustive]
     I16(i16),
+    #[non_exhaustive]
     I32(i32),
+    #[non_exhaustive]
     I64(i64),
+    #[non_exhaustive]
     I128(i128),
+    #[non_exhaustive]
     Isize(isize),
+    #[non_exhaustive]
     U8(u8),
+    #[non_exhaustive]
     U16(u16),
+    #[non_exhaustive]
     U32(u32),
+    #[non_exhaustive]
     U64(u64),
+    #[non_exhaustive]
     U128(u128),
+    #[non_exhaustive]
     Usize(usize),
+    #[non_exhaustive]
     F32(f32),
+    #[non_exhaustive]
     F64(f64),
+    #[non_exhaustive]
     StaticStr(&'static str),
+    #[non_exhaustive]
     String(String),
+    #[non_exhaustive]
     UnescapedStaticStr(Unescaped<&'static str>),
+    #[non_exhaustive]
     UnescapedString(Unescaped<String>),
+    #[non_exhaustive]
     BoxDyn(Box<dyn DynViewPart>),
+    #[non_exhaustive]
     Node(Box<[ViewPart]>),
+}
+
+impl ViewPart {
+    #[inline]
+    pub fn empty() -> Self {
+        Self::Empty
+    }
 }
 
 /// Object-safe counterpart to [`Fragment`] used by [`ViewPart::BoxDyn`].
@@ -238,108 +267,46 @@ impl Fragment for ViewPart {
     }
 }
 
-pub trait IntoViewParts {
-    fn into_view_parts(self) -> impl Iterator<Item = ViewPart>;
-}
-
-impl IntoViewParts for View {
-    #[inline]
-    fn into_view_parts(self) -> impl Iterator<Item = ViewPart> {
-        once(self.part)
-    }
-}
-
-impl IntoViewParts for ViewPart {
-    #[inline]
-    fn into_view_parts(self) -> impl Iterator<Item = ViewPart> {
-        once(self)
-    }
-}
-
-impl<T> IntoViewParts for &T
-where
-    T: IntoViewParts + Copy,
-{
-    fn into_view_parts(self) -> impl Iterator<Item = ViewPart> {
-        (*self).into_view_parts()
-    }
-}
-
-impl IntoViewParts for &'static str {
-    #[inline]
-    fn into_view_parts(self) -> impl Iterator<Item = ViewPart> {
-        once(ViewPart::StaticStr(self))
-    }
-}
-
-impl IntoViewParts for String {
-    #[inline]
-    fn into_view_parts(self) -> impl Iterator<Item = ViewPart> {
-        once(ViewPart::String(self))
-    }
-}
-
-impl IntoViewParts for Box<dyn DynViewPart> {
-    #[inline]
-    fn into_view_parts(self) -> impl Iterator<Item = ViewPart> {
-        once(ViewPart::BoxDyn(self))
-    }
-}
-
-impl<const N: usize> IntoViewParts for [ViewPart; N] {
-    #[inline]
-    fn into_view_parts(self) -> impl Iterator<Item = ViewPart> {
-        self.into_iter()
-    }
-}
-
-impl IntoViewParts for Box<[ViewPart]> {
-    #[inline]
-    fn into_view_parts(self) -> impl Iterator<Item = ViewPart> {
-        self.into_iter()
-    }
-}
-
-impl<const N: usize> IntoViewParts for Box<[ViewPart; N]> {
-    #[inline]
-    fn into_view_parts(self) -> impl Iterator<Item = ViewPart> {
-        (*self).into_iter()
-    }
-}
-
-macro_rules! impl_into_view_parts_primitive {
-    ($variant:ident, $ty:ty) => {
-        impl IntoViewParts for $ty {
-            #[inline]
-            fn into_view_parts(self) -> impl Iterator<Item = ViewPart> {
-                once(ViewPart::$variant(self))
+macro_rules! impl_from_for_view_part {
+    ($($variant:ident($ty:ty)),* $(,)?) => {
+        $(
+            impl From<$ty> for ViewPart {
+                #[inline]
+                fn from(value: $ty) -> Self {
+                    Self::$variant(value)
+                }
             }
-        }
+        )*
     };
 }
 
-impl_into_view_parts_primitive!(Bool, bool);
-impl_into_view_parts_primitive!(Char, char);
-impl_into_view_parts_primitive!(I8, i8);
-impl_into_view_parts_primitive!(I16, i16);
-impl_into_view_parts_primitive!(I32, i32);
-impl_into_view_parts_primitive!(I64, i64);
-impl_into_view_parts_primitive!(I128, i128);
-impl_into_view_parts_primitive!(Isize, isize);
-impl_into_view_parts_primitive!(U8, u8);
-impl_into_view_parts_primitive!(U16, u16);
-impl_into_view_parts_primitive!(U32, u32);
-impl_into_view_parts_primitive!(U64, u64);
-impl_into_view_parts_primitive!(U128, u128);
-impl_into_view_parts_primitive!(Usize, usize);
-impl_into_view_parts_primitive!(F32, f32);
-impl_into_view_parts_primitive!(F64, f64);
+impl_from_for_view_part! {
+    Bool(bool),
+    Char(char),
+    I8(i8),
+    I16(i16),
+    I32(i32),
+    I64(i64),
+    I128(i128),
+    Isize(isize),
+    U8(u8),
+    U16(u16),
+    U32(u32),
+    U64(u64),
+    U128(u128),
+    Usize(usize),
+    F32(f32),
+    F64(f64),
+    StaticStr(&'static str),
+    String(String),
+    UnescapedStaticStr(Unescaped<&'static str>),
+    UnescapedString(Unescaped<String>),
+    BoxDyn(Box<dyn DynViewPart>),
+    Node(Box<[ViewPart]>),
+}
 
-impl<T> IntoViewParts for Option<T>
-where
-    T: IntoViewParts,
-{
-    fn into_view_parts(self) -> impl Iterator<Item = ViewPart> {
-        self.into_iter().flat_map(IntoViewParts::into_view_parts)
+impl From<View> for ViewPart {
+    fn from(value: View) -> Self {
+        value.part
     }
 }

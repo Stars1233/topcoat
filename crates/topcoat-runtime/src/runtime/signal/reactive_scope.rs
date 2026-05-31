@@ -1,6 +1,6 @@
 use serde::Serialize;
 use topcoat_core::context::Cx;
-use topcoat_view::runtime::{IntoViewParts, Unescaped, View, ViewPart};
+use topcoat_view::runtime::{NodeViewParts, Unescaped, View, ViewPart};
 use uuid::Uuid;
 
 use crate::runtime::{Island, SignalId, Signals};
@@ -45,28 +45,20 @@ impl ReactiveScope {
     }
 }
 
-impl IntoViewParts for ReactiveScope {
+impl NodeViewParts for ReactiveScope {
     fn into_view_parts(self) -> impl Iterator<Item = ViewPart> {
         [
-            ViewPart::UnescapedStaticStr(Unescaped::new_unchecked("<!-- ::topcoat::scope::start(")),
-            ViewPart::UnescapedString(Unescaped::new_unchecked(
-                serde_json::to_string(&self.id).unwrap(),
-            )),
-            ViewPart::UnescapedStaticStr(Unescaped::new_unchecked(", ")),
-            ViewPart::UnescapedString(Unescaped::new_unchecked(
-                serde_json::to_string(&self.track).unwrap(),
-            )),
-            ViewPart::UnescapedStaticStr(Unescaped::new_unchecked(", ")),
-            ViewPart::UnescapedString(Unescaped::new_unchecked(
-                serde_json::to_string(&self.path).unwrap(),
-            )),
-            ViewPart::UnescapedStaticStr(Unescaped::new_unchecked(") -->")),
-            self.placeholder.into_inner(),
-            ViewPart::UnescapedStaticStr(Unescaped::new_unchecked("<!-- ::topcoat::scope::end(")),
-            ViewPart::UnescapedString(Unescaped::new_unchecked(
-                serde_json::to_string(&self.id).unwrap(),
-            )),
-            ViewPart::UnescapedStaticStr(Unescaped::new_unchecked(") -->")),
+            Unescaped::new_unchecked("<!-- ::topcoat::scope::start(").into(),
+            Unescaped::new_unchecked(serde_json::to_string(&self.id).unwrap()).into(),
+            Unescaped::new_unchecked(", ").into(),
+            Unescaped::new_unchecked(serde_json::to_string(&self.track).unwrap()).into(),
+            Unescaped::new_unchecked(", ").into(),
+            Unescaped::new_unchecked(serde_json::to_string(&self.path).unwrap()).into(),
+            Unescaped::new_unchecked(") -->").into(),
+            self.placeholder.into(),
+            Unescaped::new_unchecked("<!-- ::topcoat::scope::end(").into(),
+            Unescaped::new_unchecked(serde_json::to_string(&self.id).unwrap()).into(),
+            Unescaped::new_unchecked(") -->").into(),
         ]
         .into_iter()
     }

@@ -8,7 +8,7 @@ use syn::{
 
 use crate::ast::{
     ParseOption,
-    view::{AttributeKey, AttributeValue, TemplateExpr, ViewWriter, WriteView},
+    view::{AttributeKey, AttributeValue, ExprKind, TemplateExpr, ViewWriter, WriteView},
 };
 
 /// A plain `name=value` attribute on an [`Element`](super::Element) or
@@ -32,12 +32,15 @@ impl WriteView for Attribute {
             AttributeValue::Expr(_) => {
                 let key = &self.key;
                 let value = &self.value;
-                writer.write_expr(quote! {
-                    ::topcoat::view::Attribute::new(
-                        #key,
-                        #value,
-                    )
-                });
+                writer.write_expr(
+                    ExprKind::Attributes,
+                    quote! {
+                        ::topcoat::view::Attribute::new(
+                            #key,
+                            #value,
+                        )
+                    },
+                );
             }
         }
     }
@@ -81,12 +84,15 @@ impl WriteView for BindAttribute {
     fn write(&self, writer: &mut ViewWriter) {
         let key = &self.key;
         let expr = &self.value.expr;
-        writer.write_expr(quote! {
-            ::topcoat::runtime::BindAttribute::new(
-                #key,
-                ::topcoat::runtime::expr! { #expr },
-            )
-        });
+        writer.write_expr(
+            ExprKind::Attributes,
+            quote! {
+                ::topcoat::runtime::BindAttribute::new(
+                    #key,
+                    ::topcoat::runtime::expr! { #expr },
+                )
+            },
+        );
     }
 }
 
@@ -129,12 +135,15 @@ impl WriteView for EventHandler {
     fn write(&self, writer: &mut ViewWriter) {
         let key = &self.key;
         let expr = &self.value.expr;
-        writer.write_expr(quote! {
-            ::topcoat::runtime::EventHandler::new(
-                #key,
-                ::topcoat::runtime::expr! { #expr },
-            )
-        });
+        writer.write_expr(
+            ExprKind::Attributes,
+            quote! {
+                ::topcoat::runtime::EventHandler::new(
+                    #key,
+                    ::topcoat::runtime::expr! { #expr },
+                )
+            },
+        );
     }
 }
 

@@ -8,7 +8,7 @@ use syn::{
 
 use crate::ast::{
     ParseOption,
-    view::{ViewWriter, WriteView},
+    view::{ExprKind, ViewWriter, WriteView},
 };
 
 mod kw {
@@ -45,13 +45,16 @@ impl WriteView for ReactiveScope {
         let path = &self.path;
         let signals = self.signals.iter();
 
-        writer.write_expr(quote! {
-            ::topcoat::runtime::ReactiveScope::new(
-                __cx,
-                (#(::topcoat::runtime::ReadSignal::new(&#signals),)*),
-                #path,
-            ).await?
-        });
+        writer.write_expr(
+            ExprKind::Node,
+            quote! {
+                ::topcoat::runtime::ReactiveScope::new(
+                    __cx,
+                    (#(::topcoat::runtime::ReadSignal::new(&#signals),)*),
+                    #path,
+                ).await?
+            },
+        );
     }
 }
 

@@ -2,6 +2,8 @@ mod _group;
 mod api;
 mod posts;
 
+use std::time::Duration;
+
 use topcoat::{
     asset::asset,
     context::{Cx, memoize},
@@ -158,10 +160,10 @@ async fn combobox(content: Island<(ReadSignal<String>,), topcoat::router::Error>
     view! {
         signal kek = 5.0;
         <div>
-            <input
-                :value=(*kek.read())
-                @input=(move |e| kek.set(*kek.read() + 1.0) )
-            >
+            // <input
+            //     :value=(*kek.read())
+            //     @input=(move |e| kek.set(*kek.read() + 1.0) )
+            // >
             // <input
             //     :value=(signal.read())
             //     // @change=(|e| kek.with(|v| v.pip.update() = 5; ))

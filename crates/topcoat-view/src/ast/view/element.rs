@@ -9,7 +9,10 @@ use syn::{
 
 use crate::ast::{
     ParseOption,
-    view::{Attributes, ClosingTag, ElementName, Node, Nodes, OpeningTag, ViewWriter, WriteView},
+    view::{
+        Attributes, ClosingTag, ElementName, ExprKind, Node, Nodes, OpeningTag, ViewWriter,
+        WriteView,
+    },
 };
 
 /// An HTML element. `Void` covers the HTML void elements (`<br>`, `<img>`, …)
@@ -75,7 +78,7 @@ impl WriteView for Element {
                 match (name_ident.as_ref(), name_expr) {
                     (Some(ident), Some(expr)) => {
                         writer.let_binding(&syn::parse_quote!(#ident), &syn::parse_quote!(&#expr));
-                        writer.write_expr(quote! { #ident });
+                        writer.write_expr(ExprKind::ElementName, quote! { #ident });
                     }
                     _ => opening_tag.name.write(writer),
                 }
@@ -88,7 +91,9 @@ impl WriteView for Element {
 
                 writer.write_str_unescaped("</");
                 match name_ident {
-                    Some(ident) => writer.write_expr(quote! { #ident }),
+                    Some(ident) => {
+                        writer.write_expr(ExprKind::ElementName, quote! { #ident })
+                    }
                     _ => opening_tag.name.write(writer),
                 }
                 writer.write_str_unescaped(">");

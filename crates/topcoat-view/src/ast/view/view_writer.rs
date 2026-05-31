@@ -1,6 +1,6 @@
-use proc_macro2::TokenStream;
+use proc_macro2::{Span, TokenStream};
 use quote::{ToTokens, quote};
-use syn::{Expr, Pat};
+use syn::{Expr, Ident, Pat};
 
 /// AST nodes that can emit themselves into a [`ViewWriter`].
 pub(crate) trait WriteView {
@@ -39,9 +39,10 @@ impl ViewWriter {
     pub fn flush(&mut self) {
         if !self.static_segment.is_empty() {
             let static_segment = &self.static_segment;
-            self.chunks.push(Chunk::Expr(
-                quote! { ::topcoat::view::Unescaped::new_unchecked(#static_segment) },
-            ));
+            self.chunks.push(Chunk::Expr {
+                kind: ExprKind::Node,
+                tokens: quote! { ::topcoat::view::Unescaped::new_unchecked(#static_segment) },
+            });
             self.static_segment.clear();
         }
     }
@@ -54,9 +55,9 @@ impl ViewWriter {
         crate::runtime::Formatter::new(&mut self.static_segment).write_str(s);
     }
 
-    pub fn write_expr(&mut self, expr: TokenStream) {
+    pub fn write_expr(&mut self, kind: ExprKind, tokens: TokenStream) {
         self.flush();
-        self.chunks.push(Chunk::Expr(expr))
+        self.chunks.push(Chunk::Expr { kind, tokens })
     }
 
     pub fn let_binding(&mut self, pat: &Pat, expr: &Expr) {
@@ -109,7 +110,7 @@ impl ViewWriter {
         let format_expr = {
             fn needs_vec(chunks: &[Chunk]) -> bool {
                 chunks.iter().any(|chunk| match chunk {
-                    Chunk::Expr(_) => false,
+                    Chunk::Expr { .. } => false,
                     Chunk::For { body, .. } => needs_vec(&body.chunks),
                     Chunk::Let { .. } | Chunk::If { .. } | Chunk::Match { .. } => true,
                 })
@@ -118,18 +119,15 @@ impl ViewWriter {
             if self.chunks.is_empty() {
                 // Optimized path: The view has no content.
                 quote! { ::topcoat::view::View::empty() }
-            } else if self.chunks.len() == 1 && matches!(self.chunks[0], Chunk::Expr(_)) {
-                // Optimized path: The view can be constructed from a single expression.
-                let Chunk::Expr(entry) = &self.chunks[0] else {
-                    unreachable!()
-                };
-                quote! { ::topcoat::view::View::new(#entry) }
             } else if !needs_vec(&self.chunks) {
                 // No `let`/`if`/`match`: build a chained iterator of parts.
                 fn build_chain(chunks: &[Chunk]) -> TokenStream {
                     fn chunk_to_iter(chunk: &Chunk) -> TokenStream {
                         match chunk {
-                            Chunk::Expr(expr) => quote! { IntoViewParts::into_view_parts(#expr) },
+                            Chunk::Expr { kind, tokens } => {
+                                let helper = kind.helper();
+                                quote! { #helper(#tokens) }
+                            }
                             Chunk::For { pat, expr, body } => {
                                 let body_iter = build_chain(&body.chunks);
                                 quote! {
@@ -153,7 +151,7 @@ impl ViewWriter {
 
                 let chain = build_chain(&self.chunks);
                 quote! {{
-                    use ::topcoat::view::IntoViewParts;
+                    use ::topcoat::view::internal::*;
                     ::core::iter::Iterator::collect::<::topcoat::view::View>(#chain)
                 }}
             } else {
@@ -162,8 +160,9 @@ impl ViewWriter {
                     let mut output = TokenStream::new();
                     for chunk in chunks {
                         match chunk {
-                            Chunk::Expr(expr) => {
-                                quote! { __v.extend(IntoViewParts::into_view_parts(#expr)); }
+                            Chunk::Expr { kind, tokens } => {
+                                let helper = kind.helper();
+                                quote! { __v.extend(#helper(#tokens)); }
                             }
                             Chunk::Let { pat, expr } => {
                                 quote! { let #pat = #expr; }
@@ -216,15 +215,15 @@ impl ViewWriter {
                 let capacity = self
                     .chunks
                     .iter()
-                    .filter(|chunk| matches!(chunk, Chunk::Expr(..)))
+                    .filter(|chunk| matches!(chunk, Chunk::Expr { .. }))
                     .count();
                 let statements = build_vec(&self.chunks);
 
                 quote! {{
-                    use ::topcoat::view::IntoViewParts;
+                    use ::topcoat::view::internal::*;
                     let mut __v = ::std::vec::Vec::with_capacity(#capacity);
                     #statements
-                    ::topcoat::view::View::new(__v.into_boxed_slice())
+                    ::topcoat::view::View::new(__v.into_boxed_slice().into())
                 }}
             }
         };
@@ -237,8 +236,36 @@ impl ViewWriter {
     }
 }
 
+/// Identifies which `internal` helper a [`Chunk::Expr`] should be wrapped in
+/// when emitted, so the generated code uses the matching `__*` function and
+/// the corresponding `*ViewParts` trait.
+#[derive(Copy, Clone)]
+pub(crate) enum ExprKind {
+    Node,
+    ElementName,
+    AttributeKey,
+    AttributeValue,
+    Attributes,
+}
+
+impl ExprKind {
+    fn helper(self) -> Ident {
+        let name = match self {
+            Self::Node => "__node",
+            Self::ElementName => "__element_name",
+            Self::AttributeKey => "__attribute_key",
+            Self::AttributeValue => "__attribute_value",
+            Self::Attributes => "__attributes",
+        };
+        Ident::new(name, Span::call_site())
+    }
+}
+
 enum Chunk {
-    Expr(TokenStream),
+    Expr {
+        kind: ExprKind,
+        tokens: TokenStream,
+    },
     Let {
         pat: Pat,
         expr: Box<Expr>,

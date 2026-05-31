@@ -8,7 +8,7 @@ use syn::{
 
 use crate::ast::view::{
     TemplateExpr,
-    view_writer::{ViewWriter, WriteView},
+    view_writer::{ExprKind, ViewWriter, WriteView},
 };
 
 pub enum AttributeValue {
@@ -19,7 +19,9 @@ pub enum AttributeValue {
 impl WriteView for AttributeValue {
     fn write(&self, writer: &mut ViewWriter) {
         match self {
-            Self::Expr(inner) => writer.write_expr(inner.expr.to_token_stream()),
+            Self::Expr(inner) => {
+                writer.write_expr(ExprKind::AttributeValue, inner.expr.to_token_stream())
+            }
             Self::LitStr(inner) => writer.write_str(&inner.value()),
         }
     }

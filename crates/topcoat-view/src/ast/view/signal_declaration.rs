@@ -7,7 +7,7 @@ use syn::{
 
 use crate::ast::{
     ParseOption,
-    view::{ViewWriter, WriteView},
+    view::{ExprKind, ViewWriter, WriteView},
 };
 
 mod kw {
@@ -33,7 +33,10 @@ impl WriteView for SignalDeclaration {
             &parse_quote! { #ident },
             &parse_quote! { ::topcoat::runtime::Signal::new(&#ident) },
         );
-        writer.write_expr(quote! { ::topcoat::runtime::SignalDeclaration::new(#ident) });
+        writer.write_expr(
+            ExprKind::Node,
+            quote! { ::topcoat::runtime::SignalDeclaration::new(#ident) },
+        );
     }
 }
 

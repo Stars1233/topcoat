@@ -9,7 +9,7 @@ use syn::{
     token::Paren,
 };
 
-use crate::ast::view::{HtmlIdent, TemplateExpr, ViewWriter, WriteView};
+use crate::ast::view::{ExprKind, HtmlIdent, TemplateExpr, ViewWriter, WriteView};
 
 /// The name appearing in an [`Element`](super::Element)'s tag. May be an HTML
 /// identifier (`div`, `data-foo`, `xmlns:xlink`), a string literal
@@ -76,7 +76,9 @@ impl WriteView for ElementName {
         match self {
             Self::Ident(inner) => writer.write_str_unescaped(&inner.to_string()),
             Self::LitStr(inner) => writer.write_str_unescaped(&inner.value()),
-            Self::Expr(inner) => writer.write_expr(inner.expr.to_token_stream()),
+            Self::Expr(inner) => {
+                writer.write_expr(ExprKind::ElementName, inner.expr.to_token_stream())
+            }
         }
     }
 }
