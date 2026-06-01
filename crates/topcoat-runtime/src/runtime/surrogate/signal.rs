@@ -38,6 +38,6 @@ impl_surrogate_mut!({'a, T} Signal<'a, T>, WriteSignal<'a, T>);
 impl<'a, T> ToJs for WriteSignal<'a, T> {
     fn to_js(&self, out: &mut String) {
         let id = self.0.id();
-        let _ = write!(out, "__cx.signal(\"{id}\")");
+        let _ = write!(out, "cx.signal(\"{id}\")");
     }
 }

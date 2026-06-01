@@ -1,5 +1,5 @@
 import { signal, type WriteSignal } from "@maverick-js/signals";
-import { f64, Ref } from "./context";
+import { f64, Ref } from "./surrogate";
 
 export type SignalId = string;
 

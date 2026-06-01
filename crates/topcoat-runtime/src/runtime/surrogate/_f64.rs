@@ -22,7 +22,7 @@ impl_surrogate_mut!(core::primitive::f64, f64);
 
 impl ToJs for f64 {
     fn to_js(&self, out: &mut String) {
-        let _ = write!(out, "__cx.builtin.f64({self})");
+        let _ = write!(out, "cx.s.f64({self})");
     }
 }
 
