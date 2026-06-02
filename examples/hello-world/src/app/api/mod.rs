@@ -1,5 +1,8 @@
 use axum::http::StatusCode;
-use topcoat::router::{IntoResponse, Response, Result, route};
+use topcoat::{
+    Result,
+    router::{IntoResponse, Response, route},
+};
 
 #[route(GET)]
 async fn kek() -> Result<Response> {

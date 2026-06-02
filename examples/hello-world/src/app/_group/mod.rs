@@ -1,5 +1,6 @@
 use topcoat::{
-    router::{Result, Slot, layout},
+    Result,
+    router::{Slot, layout},
     view::view,
 };
 

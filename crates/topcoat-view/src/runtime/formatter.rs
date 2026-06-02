@@ -1,8 +1,6 @@
-/// An HTML-aware writer that escapes text content by default.
+/// An HTML-aware writer.
 ///
-/// `Formatter` wraps a [`String`] buffer and provides paired
-/// escaped/unescaped methods for writing strings and characters. The escaped
-/// variants handle the five characters that are meaningful in HTML:
+/// The escaped methods handle the five characters that are meaningful in HTML:
 ///
 /// | Character | Escaped as |
 /// |-----------|------------|
@@ -12,11 +10,8 @@
 /// | `"`       | `&quot;`   |
 /// | `'`       | `&#x27;`   |
 ///
-/// Use the escaped methods ([`write_str`](Self::write_str),
-/// [`write_char`](Self::write_char)) for user-provided or dynamic content, and
-/// the unescaped methods ([`write_str_unescaped`](Self::write_str_unescaped),
-/// [`write_char_unescaped`](Self::write_char_unescaped)) for trusted markup
-/// like tags and attributes.
+/// Use [`write_str`](Self::write_str) and [`write_char`](Self::write_char) for
+/// dynamic text. Use the unescaped methods only for trusted markup.
 pub struct Formatter<'a> {
     buf: &'a mut String,
 }
@@ -48,11 +43,6 @@ impl<'a> Formatter<'a> {
     }
 
     /// Writes a string, escaping any HTML-significant characters.
-    ///
-    /// Scans for safe spans and flushes them in bulk, only falling back to
-    /// per-entity writes when a special character is encountered. This avoids
-    /// the overhead of writing one character at a time for strings that are
-    /// mostly (or entirely) safe.
     #[inline]
     pub fn write_str(&mut self, s: &str) {
         let bytes = s.as_bytes();

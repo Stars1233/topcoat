@@ -30,7 +30,8 @@ struct PostId(uuid::Uuid);
 // src/app/posts/id/mod.rs — the `id` module becomes `{post_id}`.
 use topcoat::{
     context::Cx,
-    router::{FallbackExt, Result, page, path_param},
+    Result,
+    router::{FallbackExt, page, path_param},
     view::view,
 };
 
@@ -87,7 +88,8 @@ Annotate a struct with named fields. The macro derives `serde::Deserialize` on i
 ```rust
 use topcoat::{
     context::Cx,
-    router::{Result, page, query_params},
+    Result,
+    router::{page, query_params},
     view::view,
 };
 

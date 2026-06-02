@@ -11,7 +11,7 @@ use syn::{
 
 use crate::ast::{
     ParseOption,
-    view::{HtmlIdent, TemplateExpr, ViewWriter, WriteView},
+    view::{ExprKind, HtmlIdent, TemplateExpr, ViewWriter, WriteView},
 };
 
 /// The name part of a single `name=value` attribute on an
@@ -27,7 +27,9 @@ impl WriteView for AttributeKey {
     fn write(&self, writer: &mut ViewWriter) {
         match self {
             Self::Ident(inner) => writer.write_str_unescaped(&inner.to_string()),
-            Self::Expr(inner) => writer.write_expr(inner.expr.to_token_stream()),
+            Self::Expr(inner) => {
+                writer.write_expr(ExprKind::AttributeKey, inner.expr.to_token_stream())
+            }
         }
     }
 }
@@ -54,8 +56,8 @@ impl ParseOption for AttributeKey {
 impl ToTokens for AttributeKey {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         match self {
-            Self::Ident(inner) => inner.to_tokens(tokens),
-            Self::Expr(inner) => inner.to_tokens(tokens),
+            Self::Ident(inner) => inner.to_string().to_tokens(tokens),
+            Self::Expr(inner) => inner.expr.to_tokens(tokens),
         }
     }
 }

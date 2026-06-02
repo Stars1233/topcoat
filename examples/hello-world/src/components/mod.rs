@@ -1,12 +1,13 @@
 use topcoat::{
+    Result,
     context::{Cx, app_state},
-    router::{Result, uri},
+    router::uri,
     view::{View, component, view},
 };
 
 #[component]
 async fn button(id: &str, child: View) -> Result {
-    view! { <button id=(id) class="button">(child)</button> }
+    view! { <button id=(id.to_owned()) class="button">(child)</button> }
 }
 
 #[component]

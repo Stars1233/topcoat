@@ -82,8 +82,6 @@ impl ToTokens for Component {
             }
 
             impl #impl_generics ::topcoat::view::Component for #ident #ty_generics #where_clause {
-                type Error = <#return_ty as ::topcoat::internal::ResultExt>::E;
-
                 async fn render(self, cx: &::topcoat::context::Cx, child: ::topcoat::view::View) -> #return_ty {
                     let __cx = cx;
                     #body

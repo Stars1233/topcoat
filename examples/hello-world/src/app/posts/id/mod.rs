@@ -1,6 +1,7 @@
 use topcoat::{
+    Result,
     context::Cx,
-    router::{FallbackExt, Result, page, path_param},
+    router::{FallbackExt, page, path_param},
     view::view,
 };
 

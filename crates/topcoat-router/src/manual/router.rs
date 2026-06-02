@@ -1,13 +1,19 @@
 use std::{any::Any, sync::Arc};
 
 use axum::{
-    response::{Html, IntoResponse},
+    extract::Query,
+    response::Html,
     routing::{MethodFilter, get, on},
 };
+use serde::Deserialize;
 use topcoat_asset::{AssetBundle, AssetFragmentResolver, ServeAssetBundle};
 use topcoat_core::context::{MaybeAborted, State, WatchAbort};
+use topcoat_runtime::runtime::{DynShard, EncodedSignals, Shards};
 
-use crate::{CxBody, Layout, Layouts, Page, Pages, Route, Routes, not_found};
+use crate::{
+    CxBody, IntoResponse, Layout, Layouts, Page, Pages, Route, Routes, not_found,
+    result_into_response,
+};
 
 /// The core routing primitive that collects [`Page`]s, [`Layout`]s, and
 /// [`Route`]s, matches layouts to pages by path prefix, and converts into an
@@ -49,6 +55,9 @@ pub struct Router {
     pages: Pages,
     layouts: Layouts,
     routes: Routes,
+
+    shards: Shards,
+
     assets: AssetBundle,
     state: State,
 }
@@ -63,6 +72,7 @@ impl Router {
             pages: Pages::new(),
             layouts: Layouts::new(),
             routes: Routes::new(),
+            shards: Shards::new(),
             assets: AssetBundle::empty(),
             state,
         }
@@ -108,10 +118,18 @@ impl Router {
         self
     }
 
-    /// Discovers and registers all `#[page]`, `#[layout]` and `#[route]` items
+    pub fn shard(mut self, shard: &'static dyn DynShard) -> Self {
+        self.shards.register(shard);
+        self
+    }
+
+    /// Discovers and registers all `#[page]`, `#[layout]`, `#[route]`, and
+    /// `#[shard]` items
     /// collected at link time across the crate and its dependencies.
     #[cfg(feature = "discover")]
     pub fn discover(mut self) -> Self {
+        use topcoat_runtime::runtime::DynShard;
+
         for page in inventory::iter::<Page>().cloned() {
             self = self.page(page);
         }
@@ -121,6 +139,11 @@ impl Router {
         for route in inventory::iter::<Route>().cloned() {
             self = self.route(route);
         }
+
+        for shard in inventory::iter::<&'static dyn DynShard>().cloned() {
+            self = self.shard(shard);
+        }
+
         self
     }
 
@@ -203,8 +226,9 @@ impl From<Router> for axum::Router {
                     .await;
 
                     match result {
-                        MaybeAborted::Completed(Ok(view)) => Html(view.render(&cx)).into_response(),
-                        MaybeAborted::Completed(Err(error)) => error.into_response(),
+                        MaybeAborted::Completed(result) => {
+                            result_into_response(result.map(|view| Html(view.render(&cx))))
+                        }
                         MaybeAborted::Aborted(_value) => {
                             panic!("request was aborted with an unrecognized type");
                         }
@@ -223,7 +247,7 @@ impl From<Router> for axum::Router {
                         let result = WatchAbort::new(&cx, route.handle(&cx, body)).await;
 
                         match result {
-                            MaybeAborted::Completed(value) => value.into_response(),
+                            MaybeAborted::Completed(result) => result_into_response(result),
                             MaybeAborted::Aborted(_value) => {
                                 panic!("request was aborted with an unrecognized type");
                             }
@@ -232,6 +256,31 @@ impl From<Router> for axum::Router {
                 ),
             );
         }
+
+        let mut shard_router = axum::Router::new();
+        for shard in value.shards {
+            #[derive(Deserialize)]
+            struct SignalsQuery {
+                signals: String,
+            }
+
+            shard_router = shard_router.route(
+                &("/".to_owned() + shard.id().as_str()),
+                get(
+                    async |Query(query): Query<SignalsQuery>, CxBody { cx, body: _ }: CxBody| {
+                        let signal_param = query.signals;
+                        // todo: handle errors properly
+
+                        let result = shard
+                            .dyn_render(&cx, EncodedSignals::new(signal_param))
+                            .await;
+
+                        result_into_response(result.map(|view| Html(view.render(&cx))))
+                    },
+                ),
+            );
+        }
+        axum_router = axum_router.nest("/_topcoat/shards", shard_router);
 
         axum_router = axum_router
             .fallback(async move |CxBody { cx: _, body: _ }: CxBody| not_found().into_response());

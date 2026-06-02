@@ -95,7 +95,8 @@ It is *not* a substitute for a long-lived cache (Redis, an LRU, etc.). Cross-req
 ```rust
 use topcoat::{
     context::{Cx, memoize},
-    router::{Result, Slot, layout, page},
+    Result,
+    router::{Slot, layout, page},
     view::view,
 };
 
@@ -126,4 +127,3 @@ async fn dashboard(cx: &Cx) -> Result {
 ```
 
 The layout and the page each call `current_user(cx)`, but the database is queried at most once per request.
-

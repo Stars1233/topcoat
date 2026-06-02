@@ -9,7 +9,7 @@ use syn::{
     token::Paren,
 };
 
-use crate::ast::view::{HtmlIdent, TemplateExpr, ViewWriter, WriteView};
+use crate::ast::view::{ExprKind, HtmlIdent, TemplateExpr, ViewWriter, WriteView};
 
 /// The name appearing in an [`Element`](super::Element)'s tag. May be an HTML
 /// identifier (`div`, `data-foo`, `xmlns:xlink`), a string literal
@@ -76,7 +76,9 @@ impl WriteView for ElementName {
         match self {
             Self::Ident(inner) => writer.write_str_unescaped(&inner.to_string()),
             Self::LitStr(inner) => writer.write_str_unescaped(&inner.value()),
-            Self::Expr(inner) => writer.write_expr(inner.expr.to_token_stream()),
+            Self::Expr(inner) => {
+                writer.write_expr(ExprKind::ElementName, inner.expr.to_token_stream())
+            }
         }
     }
 }
@@ -95,7 +97,7 @@ impl Parse for ElementName {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let lookahead = input.lookahead1();
         if lookahead.peek(Ident) {
-            Ok(Self::Ident(input.parse()?))
+            Ok(Self::Ident(HtmlIdent::parse_dash_only(input)?))
         } else if lookahead.peek(LitStr) {
             Ok(Self::LitStr(input.parse()?))
         } else if lookahead.peek(Paren) {
@@ -133,19 +135,41 @@ mod tests {
     }
 
     #[test]
-    fn html_ident_name_with_separators() {
+    fn html_ident_name_allows_dashes() {
         assert_eq!(
             parse("my-component").string_name().as_deref(),
             Some("my-component"),
         );
         assert_eq!(
-            parse("xmlns:xlink").string_name().as_deref(),
-            Some("xmlns:xlink"),
-        );
-        assert_eq!(
             parse("data-foo-bar").string_name().as_deref(),
             Some("data-foo-bar"),
         );
+    }
+
+    #[test]
+    fn html_ident_name_stops_at_colon_or_dot() {
+        // `:` and `.` are reserved for attribute syntax (`:value`,
+        // `class.active`) and must not be consumed as part of an element name.
+        use syn::Token;
+        use syn::parse::Parser;
+
+        let parser = |input: syn::parse::ParseStream| -> syn::Result<ElementName> {
+            let name = input.parse::<ElementName>()?;
+            let _: Token![:] = input.parse()?;
+            let _: Ident = input.parse()?;
+            Ok(name)
+        };
+        let name = parser.parse_str("xmlns:xlink").unwrap();
+        assert_eq!(name.string_name().as_deref(), Some("xmlns"));
+
+        let parser = |input: syn::parse::ParseStream| -> syn::Result<ElementName> {
+            let name = input.parse::<ElementName>()?;
+            let _: Token![.] = input.parse()?;
+            let _: Ident = input.parse()?;
+            Ok(name)
+        };
+        let name = parser.parse_str("class.active").unwrap();
+        assert_eq!(name.string_name().as_deref(), Some("class"));
     }
 
     #[test]

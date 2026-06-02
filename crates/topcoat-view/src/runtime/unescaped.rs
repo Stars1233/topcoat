@@ -1,21 +1,13 @@
-use std::{iter::once, ops::Deref};
+use std::ops::Deref;
 
 use topcoat_core::context::Cx;
 
-use crate::runtime::{Formatter, Fragment, IntoViewParts, ViewPart};
+use crate::runtime::{Formatter, Fragment};
 
 /// A wrapper that marks its contents as already-safe HTML.
 ///
-/// When an `Unescaped<T>` is rendered, its inner value is written verbatim
-/// using [`Formatter::write_str_unescaped`](crate::runtime::Formatter::write_str_unescaped)
-/// instead of going through the usual escaping path. This is the escape
-/// hatch for inserting trusted markup (pre-rendered HTML, sanitized
-/// fragments, server-generated tags) into a [`View`](crate::runtime::View).
-///
-/// Construct an `Unescaped` with [`new_unchecked`](Self::new_unchecked); the
-/// name reflects that the caller is asserting the content is safe to emit
-/// without escaping. Passing untrusted input through this type defeats the
-/// runtime's XSS protection.
+/// Use this only for trusted markup such as pre-rendered or sanitized HTML.
+/// Passing untrusted input through this type defeats the runtime's escaping.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Unescaped<T>(T);
 
@@ -51,17 +43,5 @@ impl<T> Deref for Unescaped<T> {
 
     fn deref(&self) -> &Self::Target {
         &self.0
-    }
-}
-
-impl IntoViewParts for Unescaped<&'static str> {
-    fn into_view_parts(self) -> impl Iterator<Item = ViewPart> {
-        once(ViewPart::UnescapedStaticStr(self))
-    }
-}
-
-impl IntoViewParts for Unescaped<String> {
-    fn into_view_parts(self) -> impl Iterator<Item = ViewPart> {
-        once(ViewPart::UnescapedString(self))
     }
 }

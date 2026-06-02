@@ -7,7 +7,7 @@ use syn::{
 
 use crate::ast::{
     ParseOption,
-    view::{Nodes, ViewWriter, WriteView},
+    view::{ExprKind, Nodes, ViewWriter, WriteView},
 };
 
 /// A user-defined component invocation, written as
@@ -44,13 +44,16 @@ impl WriteView for Component {
         }
         let child = child_writer.into_token_stream();
 
-        writer.write_expr(quote! {
-            <#name as ::topcoat::view::Component>::render(
-                #name { #(#fields),* },
-                __cx,
-                #child,
-            ).await?
-        });
+        writer.write_expr(
+            ExprKind::Node,
+            quote! {
+                <#name as ::topcoat::view::Component>::render(
+                    #name { #(#fields),* },
+                    __cx,
+                    #child,
+                ).await?
+            },
+        );
     }
 }
 

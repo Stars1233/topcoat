@@ -1,20 +1,15 @@
-//! Error types returned from page and layout handlers.
+//! Error types returned from page, layout and route handlers.
 
-use axum::response::IntoResponse;
 use http::StatusCode;
+use topcoat_core::error::Error;
 
-use crate::{ForbiddenError, NotFoundError, RedirectError, UnauthorizedError};
-
-/// The result type returned from page and layout handlers.
-///
-/// Defaults to `Result<View, Error>` so handlers can be written as
-/// `-> Result` when they produce a [`View`](topcoat_view::runtime::View) on
-/// success and an [`Error`] on failure.
-pub type Result<T = topcoat_view::runtime::View, E = Error> = core::result::Result<T, E>;
+use crate::{
+    ForbiddenError, IntoResponse, NotFoundError, RedirectError, Response, Result, UnauthorizedError,
+};
 
 /// A non-success outcome from a handler.
 #[derive(Debug)]
-pub enum Error {
+pub enum RouterError {
     /// A redirect short-circuiting the request to another URL.
     Redirect(RedirectError),
     /// A not-found response short-circuiting the request.
@@ -23,73 +18,90 @@ pub enum Error {
     Unauthorized(UnauthorizedError),
     /// A forbidden response short-circuiting the request.
     Forbidden(ForbiddenError),
-    /// An unexpected failure.
-    InternalServer(InternalServerError),
 }
 
-impl From<RedirectError> for Error {
+impl From<RedirectError> for RouterError {
     fn from(value: RedirectError) -> Self {
         Self::Redirect(value)
     }
 }
 
-impl From<NotFoundError> for Error {
+impl From<NotFoundError> for RouterError {
     fn from(value: NotFoundError) -> Self {
         Self::NotFound(value)
     }
 }
 
-impl From<UnauthorizedError> for Error {
+impl From<UnauthorizedError> for RouterError {
     fn from(value: UnauthorizedError) -> Self {
         Self::Unauthorized(value)
     }
 }
 
-impl From<ForbiddenError> for Error {
+impl From<ForbiddenError> for RouterError {
     fn from(value: ForbiddenError) -> Self {
         Self::Forbidden(value)
     }
 }
 
-/// An unexpected failure raised from a handler.
-///
-/// The wrapped error is captured for logging but never exposed to the client.
-#[derive(Debug)]
-pub struct InternalServerError {
-    _inner: Box<dyn std::error::Error + Send + Sync>,
-}
-
-impl From<InternalServerError> for Error {
-    fn from(value: InternalServerError) -> Self {
-        Self::InternalServer(value)
-    }
-}
-
-impl<T> From<T> for InternalServerError
-where
-    T: std::error::Error + Send + Sync + 'static,
-{
-    fn from(value: T) -> Self {
-        InternalServerError {
-            _inner: Box::new(value),
+impl std::fmt::Display for RouterError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Redirect(inner) => std::fmt::Display::fmt(inner, f),
+            Self::NotFound(inner) => std::fmt::Display::fmt(inner, f),
+            Self::Unauthorized(inner) => std::fmt::Display::fmt(inner, f),
+            Self::Forbidden(inner) => std::fmt::Display::fmt(inner, f),
         }
     }
 }
 
-impl IntoResponse for InternalServerError {
-    fn into_response(self) -> axum::response::Response {
-        (StatusCode::INTERNAL_SERVER_ERROR, "internal sever error").into_response()
-    }
-}
+impl std::error::Error for RouterError {}
 
-impl IntoResponse for Error {
-    fn into_response(self) -> axum::response::Response {
+impl IntoResponse for RouterError {
+    fn into_response(self) -> Response {
         match self {
             Self::Redirect(inner) => inner.into_response(),
             Self::NotFound(inner) => inner.into_response(),
             Self::Unauthorized(inner) => inner.into_response(),
             Self::Forbidden(inner) => inner.into_response(),
-            Self::InternalServer(inner) => inner.into_response(),
         }
+    }
+}
+
+/// Turns an Error into a response.
+///
+/// The IntoResponse trait unfortunately cannot be implemented on [`Error`] because it would clash
+/// with the axum implementation.
+pub(crate) fn error_into_response(error: Error) -> Response {
+    match error.downcast::<RouterError>() {
+        Ok(error) => error.into_response(),
+        Err(error) => InternalServerError::from(error).into_response(),
+    }
+}
+
+/// Turns a Result into a response.
+///
+/// The IntoResponse trait unfortunately cannot be implemented on [`Result`] because it would clash
+/// with the axum implementation.
+pub(crate) fn result_into_response<T: IntoResponse>(result: Result<T>) -> Response {
+    match result {
+        Ok(value) => value.into_response(),
+        Err(error) => error_into_response(error),
+    }
+}
+
+pub(crate) struct InternalServerError {
+    _inner: Error,
+}
+
+impl From<Error> for InternalServerError {
+    fn from(value: Error) -> Self {
+        Self { _inner: value }
+    }
+}
+
+impl IntoResponse for InternalServerError {
+    fn into_response(self) -> Response {
+        (StatusCode::INTERNAL_SERVER_ERROR, "internal server error").into_response()
     }
 }

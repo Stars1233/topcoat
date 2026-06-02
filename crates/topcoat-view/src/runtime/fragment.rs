@@ -4,18 +4,11 @@ use topcoat_core::context::Cx;
 
 use crate::runtime::Formatter;
 
-/// A piece of content that can be written into a [`Formatter`].
+/// A value that can render itself into a [`Formatter`].
 ///
-/// Implement `Fragment` to make a type renderable. The [`fmt`](Self::fmt)
-/// method receives a context and a formatter that handles HTML escaping; it
-/// is the implementor's responsibility to choose between the escaped and
-/// unescaped writer methods depending on whether the content is trusted
-/// markup or user-supplied data.
-///
-/// Fragments are inert until rendered: building a [`View`](crate::runtime::View)
-/// only stores the fragment, and no formatting happens until
-/// [`View::render`](crate::runtime::View::render) walks the tree and invokes
-/// [`fmt`](Self::fmt) on each node.
+/// Implement this for custom renderable types. Use the escaped formatter
+/// methods for dynamic or user-provided text, and the unescaped methods only
+/// for trusted markup.
 pub trait Fragment {
     /// Writes this fragment into `f`, escaping content as appropriate.
     fn fmt(&self, cx: &Cx, f: &mut Formatter<'_>);

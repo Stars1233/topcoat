@@ -1,6 +1,7 @@
 use topcoat::{
+    Result,
     context::Cx,
-    router::{Result, page, query_params},
+    router::{page, query_params},
     view::view,
 };
 

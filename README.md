@@ -56,7 +56,8 @@ mod _group;
 mod about;
 
 use topcoat::{
-    router::{Result, Slot, layout, page},
+    Result,
+    router::{Slot, layout, page},
     view::view,
 };
 
@@ -94,7 +95,7 @@ async fn home_page() -> Result {
 
 **`src/app/about.rs`**
 ```rust
-use topcoat::{router::{Result, page}, view::view};
+use topcoat::{Result, router::page, view::view};
 
 #[page]
 async fn about_page() -> Result {
@@ -123,7 +124,8 @@ If you prefer not to use the module router, you can register pages and layouts e
 
 ```rust
 use topcoat::{
-    router::{Result, Router, Slot, layout, page},
+    Result,
+    router::{Router, Slot, layout, page},
     view::view,
 };
 
@@ -190,7 +192,7 @@ view! {
 Components are async functions annotated with `#[component]`. They receive typed parameters including child `View`s.
 
 ```rust
-use topcoat::{component, router::Result, view::{View, view}};
+use topcoat::{Result, component, view::{View, view}};
 
 #[component]
 async fn button<'a>(id: &'a str, child: View) -> Result {

@@ -37,7 +37,8 @@ Inside any handler that has access to a `Cx`, call `app_state::<T>(cx)` to borro
 ```rust
 use topcoat::{
     context::{Cx, app_state},
-    router::{Result, page},
+    Result,
+    router::page,
     view::view,
 };
 

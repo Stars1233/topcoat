@@ -9,7 +9,7 @@ You can register pages and layouts in two ways: **manually** (explicit paths, fu
 A page is an async function annotated with `#[page]` and an explicit path:
 
 ```rust
-use topcoat::{router::{Result, page}, view::view};
+use topcoat::{Result, router::page, view::view};
 
 #[page("/")]
 async fn home() -> Result {
@@ -42,7 +42,8 @@ A layout wraps pages. It receives a `Slot` — a future that resolves to the inn
 
 ```rust
 use topcoat::{
-    router::{Result, Slot, layout},
+    Result,
+    router::{Slot, layout},
     view::view,
 };
 
@@ -147,7 +148,8 @@ let axum_router: axum::Router = router.into();
 
 ```rust
 use topcoat::{
-    router::{Result, Router, Slot, layout, page},
+    Result,
+    router::{Router, Slot, layout, page},
     view::view,
 };
 
