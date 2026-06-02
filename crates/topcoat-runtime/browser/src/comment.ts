@@ -1,4 +1,5 @@
-import type { SignalId } from "./signal";
+import { Context } from "./context";
+import { type SignalId, SignalRegistry } from "./signal";
 
 export type ReactiveScopeId = string;
 
@@ -12,7 +13,7 @@ export type CommentMarker =
 	  }
 	| { kind: "scope-end"; id: ReactiveScopeId };
 
-const SIGNAL_RE = /^\s*::topcoat::signal\((\{.*\})\)\s*$/;
+const SIGNAL_RE = /^\s*::topcoat::signal\("([^"]*)", (.*)\)\s*$/;
 const SCOPE_START_RE =
 	/^\s*::topcoat::scope::start\(("[^"]+"), (\[[^\]]*\]), ("[^"]*")\)\s*$/;
 const SCOPE_END_RE = /^\s*::topcoat::scope::end\(("[^"]+")\)\s*$/;
@@ -22,8 +23,16 @@ export function parseComment(node: Comment): CommentMarker | null {
 
 	const sig = SIGNAL_RE.exec(text);
 	if (sig) {
-		const data = JSON.parse(sig[1]) as { id: SignalId; value: unknown };
-		return { kind: "signal", id: data.id, value: data.value };
+		const id = sig[1];
+		const valueExpr = JSON.parse(sig[2]);
+		const value = new Function("cx", `return ${valueExpr}`)(
+			new Context(new SignalRegistry()),
+		);
+		return {
+			kind: "signal",
+			id,
+			value,
+		};
 	}
 
 	const start = SCOPE_START_RE.exec(text);

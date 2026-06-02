@@ -1,10 +1,12 @@
 mod _f64;
 mod _str;
+mod event;
 mod signal;
 mod string;
 
 pub use _f64::*;
 pub use _str::*;
+pub use event::*;
 pub use signal::*;
 pub use string::*;
 
@@ -22,6 +24,12 @@ pub trait Surrogate {
 
 pub trait ToJs {
     fn to_js(&self, out: &mut std::string::String);
+}
+
+impl<T: ToJs + ?Sized> ToJs for &T {
+    fn to_js(&self, out: &mut std::string::String) {
+        <T as ToJs>::to_js(*self, out);
+    }
 }
 
 macro_rules! impl_surrogate {

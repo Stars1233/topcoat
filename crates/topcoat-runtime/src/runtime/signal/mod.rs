@@ -10,6 +10,8 @@ use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use topcoat_view::runtime::{NodeViewParts, Unescaped, ViewParts};
 use uuid::Uuid;
 
+use crate::runtime::{Surrogated, ToJs};
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct SignalId(Uuid);
@@ -34,7 +36,7 @@ impl std::fmt::Display for SignalId {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
 pub struct Signal<T> {
     id: SignalId,
     value: T,
@@ -69,13 +71,17 @@ impl<'a, T> SignalDeclaration<'a, T> {
 
 impl<T> NodeViewParts for SignalDeclaration<'_, T>
 where
-    T: Serialize,
+    for<'a> &'a T: Surrogated,
+    for<'a> <&'a T as Surrogated>::Surrogate: ToJs,
 {
     fn into_view_parts(self, parts: &mut ViewParts) {
+        let id = self.0.id().to_string();
+        let mut js = String::new();
+        (&self.0.value).into_surrogate().to_js(&mut js);
         parts.push(Unescaped::new_unchecked("<!-- ::topcoat::signal("));
-        parts.push(Unescaped::new_unchecked(
-            serde_json::to_string(&self.0).unwrap(),
-        ));
+        parts.push(Unescaped::new_unchecked(format!("{id:?}")));
+        parts.push(Unescaped::new_unchecked(", "));
+        parts.push(Unescaped::new_unchecked(format!("{js:?}")));
         parts.push(Unescaped::new_unchecked(") -->"));
     }
 }
