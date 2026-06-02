@@ -21,5 +21,5 @@ impl Event {
 }
 
 pub struct EventTarget {
-    pub value: String,
+    pub value: crate::runtime::String,
 }

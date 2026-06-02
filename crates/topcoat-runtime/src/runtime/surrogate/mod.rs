@@ -1,8 +1,12 @@
 mod _f64;
+mod _str;
 mod signal;
+mod string;
 
 pub use _f64::*;
+pub use _str::*;
 pub use signal::*;
+pub use string::*;
 
 pub trait Surrogated {
     type Surrogate: Surrogate<Real = Self>;
@@ -17,7 +21,7 @@ pub trait Surrogate {
 }
 
 pub trait ToJs {
-    fn to_js(&self, out: &mut String);
+    fn to_js(&self, out: &mut std::string::String);
 }
 
 macro_rules! impl_surrogate {

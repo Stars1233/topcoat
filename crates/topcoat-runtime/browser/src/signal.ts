@@ -1,5 +1,5 @@
 import { signal, type WriteSignal } from "@maverick-js/signals";
-import { f64, Ref } from "./surrogate";
+import { F64, Ref } from "./surrogate";
 
 export type SignalId = string;
 
@@ -20,7 +20,7 @@ export class SignalRegistry {
 	 */
 	insert(id: SignalId, value: unknown): boolean {
 		if (this.signals.has(id)) return false;
-		this.signals.set(id, signal(new Ref(new f64(value as number) as unknown)));
+		this.signals.set(id, signal(new Ref(new F64(value as number) as unknown)));
 		return true;
 	}
 
