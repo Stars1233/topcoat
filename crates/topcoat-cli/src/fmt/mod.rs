@@ -23,6 +23,7 @@ impl FmtCommand {
     pub async fn run(&self) {
         let mut registry = Registry::new();
         registry.register_macro::<topcoat_view::ast::view::View>("view");
+        registry.register_macro::<topcoat_view::ast::attributes::Attributes>("attributes");
 
         let start = Instant::now();
         let result: Result<(), Error> = async {

@@ -38,7 +38,14 @@ async fn layout(cx: &Cx, slot: Slot<'_>) -> Result {
             <head>
                 <title>"hello world"</title>
                 <link rel="stylesheet" href=(tailwind::stylesheet!())>
-                <script type="module" src=(asset!("https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.1/bundles/datastar.js"))></script>
+                <script
+                    type="module"
+                    src=(asset!(
+                        "https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.1/bundles/datastar.js"
+                    ))
+                >
+
+                </script>
                 <script type="module" src=(topcoat::runtime::SCRIPT)></script>
                 topcoat::dev::script()
             </head>
@@ -72,9 +79,7 @@ async fn layout(cx: &Cx, slot: Slot<'_>) -> Result {
 
 #[page]
 async fn home_page() -> Result {
-    view! {
-        combobox(content: combobox_content)
-    }
+    view! { combobox(content: combobox_content) }
 }
 
 mod about {
@@ -153,14 +158,17 @@ async fn combobox_content(cx: &Cx, input: ReadSignal<String>) -> Result {
 
 #[component]
 async fn combobox(content: Shard<(ReadSignal<String>,)>) -> Result {
+    let kek = attributes! {  pip="5" lel="5" };
     view! {
-        signal input = "apple".to_owned();
+        // signal input = "apple".to_owned();
         <div>
-            <input
-                :value=$(input.get())
-                @input="(e) => console.log('kek')"
-            >
-            track content(input)
+            // <input
+            //     :value=$(input.get())
+            //     @input="(e) => console.log('kek')"
+            // >
+            // track content(input)
+
+
         </div>
     }
 }

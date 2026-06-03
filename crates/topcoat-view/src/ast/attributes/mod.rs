@@ -74,7 +74,7 @@ impl Parse for Attributes {
 #[cfg(feature = "pretty")]
 impl topcoat_pretty::PrettyPrint for Attributes {
     fn pretty_print(&self, printer: &mut topcoat_pretty::Printer<'_>) {
-        if self.items.is_empty() {
+        if self.is_empty() {
             return;
         }
         for item in &self.items {
