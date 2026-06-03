@@ -6,9 +6,7 @@ use syn::{
 
 use crate::ast::{
     ParseOption,
-    attributes::{
-        AttributeWriter, MatchArmsBuilder as AttributeMatchArmsBuilder, WriteAttribute,
-    },
+    attributes::{AttributeWriter, MatchArmsBuilder as AttributeMatchArmsBuilder, WriteAttribute},
     view::{MatchArmsBuilder, ViewWriter, WriteView},
 };
 

@@ -77,10 +77,12 @@ impl topcoat_pretty::PrettyPrint for Attributes {
         if self.is_empty() {
             return;
         }
-        for item in &self.items {
-            printer.scan_break();
-            " ".pretty_print(printer);
+        for (index, item) in self.items.iter().enumerate() {
             item.pretty_print(printer);
+            if index < self.items.len() - 1 {
+                printer.scan_break();
+                " ".pretty_print(printer);
+            }
         }
     }
 }

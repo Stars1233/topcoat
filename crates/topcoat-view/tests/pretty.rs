@@ -32,7 +32,10 @@ fn diff(expected: &str, actual: &str) -> String {
 }
 
 fn registry() -> Registry {
-    Registry::one::<View>("view")
+    let mut registry = Registry::new();
+    registry.register_macro::<View>("view");
+    registry.register_macro::<topcoat_view::ast::attributes::Attributes>("attributes");
+    registry
 }
 
 fn assert_format(input: &str, expected: &str) {
@@ -86,6 +89,8 @@ fixture_test!(element_with_text);
 
 fixture_test!(attributes_short);
 fixture_test!(attributes_long);
+fixture_test!(attributes_macro_short);
+fixture_test!(attributes_macro_long);
 fixture_test!(attribute_expr_value);
 
 // ── Text nodes ──────────────────────────────────────────────────────────────

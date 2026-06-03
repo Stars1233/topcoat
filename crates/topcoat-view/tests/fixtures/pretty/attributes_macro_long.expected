@@ -1,0 +1,6 @@
+attributes! {
+    class=(get_class())
+    id="main"
+    style=(compute_styles())
+    @something=(|e| println!("something happened!"))
+}
