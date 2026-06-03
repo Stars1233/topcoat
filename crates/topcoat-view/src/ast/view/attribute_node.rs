@@ -133,7 +133,19 @@ mod tests {
             AttributeNode::BindAttribute(_),
         ));
         assert!(matches!(
+            parse(r#":foo=$(bar)"#),
+            AttributeNode::BindAttribute(_),
+        ));
+        assert!(matches!(
             parse(r#"@foo=(bar)"#),
+            AttributeNode::EventHandler(_),
+        ));
+        assert!(matches!(
+            parse(r#"@foo=$(bar)"#),
+            AttributeNode::EventHandler(_),
+        ));
+        assert!(matches!(
+            parse(r#"@foo="bar()""#),
             AttributeNode::EventHandler(_),
         ));
         assert!(matches!(

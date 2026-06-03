@@ -1,5 +1,5 @@
 use proc_macro2::TokenStream;
-use quote::{ToTokens, quote};
+use quote::ToTokens;
 use syn::{
     parenthesized,
     parse::{Parse, ParseStream},
@@ -42,8 +42,7 @@ impl ParseOption for TemplateExpr {
 
 impl ToTokens for TemplateExpr {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        let expr = &self.expr;
-        quote! { #expr }.to_tokens(tokens)
+        self.expr.to_tokens(tokens)
     }
 }
 

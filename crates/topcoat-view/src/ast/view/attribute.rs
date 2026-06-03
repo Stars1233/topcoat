@@ -1,6 +1,7 @@
-use quote::quote;
+use proc_macro2::TokenStream;
+use quote::{ToTokens, quote};
 use syn::{
-    Ident, Token,
+    Ident, LitStr, Token,
     ext::IdentExt,
     parse::{Parse, ParseStream},
     token::Paren,
@@ -8,7 +9,7 @@ use syn::{
 
 use crate::ast::{
     ParseOption,
-    view::{AttributeKey, AttributeValue, ExprKind, TemplateExpr, ViewWriter, WriteView},
+    view::{AttributeKey, AttributeValue, ExprKind, TemplateOrRuntimeExpr, ViewWriter, WriteView},
 };
 
 pub struct Attribute {
@@ -65,25 +66,25 @@ impl topcoat_pretty::PrettyPrint for Attribute {
     }
 }
 
-/// A `:name=(expr)` attribute — a one-way binding from a reactive expression to
-/// a DOM attribute or property.
+/// A `:name=(expr)` or `:name=$(expr)` attribute — a one-way binding to a DOM
+/// attribute or property.
 pub struct BindAttribute {
     pub colon: Token![:],
     pub key: AttributeKey,
     pub eq: Token![=],
-    pub value: TemplateExpr,
+    pub value: TemplateOrRuntimeExpr,
 }
 
 impl WriteView for BindAttribute {
     fn write(&self, writer: &mut ViewWriter) {
         let key = &self.key;
-        let expr = &self.value.expr;
+        let value = &self.value;
         writer.write_expr(
             ExprKind::Attributes,
             quote! {
                 ::topcoat::runtime::BindAttribute::new(
                     #key,
-                    ::topcoat::runtime::expr! { #expr },
+                    #value,
                 )
             },
         );
@@ -117,24 +118,67 @@ impl topcoat_pretty::PrettyPrint for BindAttribute {
     }
 }
 
-/// An `@name=(expr)` attribute — a DOM event handler.
+pub enum EventHandlerValue {
+    Expr(TemplateOrRuntimeExpr),
+    LitStr(LitStr),
+}
+
+impl Parse for EventHandlerValue {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let lookahead = input.lookahead1();
+        if TemplateOrRuntimeExpr::peek(input) {
+            Ok(Self::Expr(input.parse()?))
+        } else if lookahead.peek(LitStr) {
+            Ok(Self::LitStr(input.parse()?))
+        } else {
+            Err(lookahead.error())
+        }
+    }
+}
+
+impl ToTokens for EventHandlerValue {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        match self {
+            Self::Expr(inner) => inner.to_tokens(tokens),
+            Self::LitStr(inner) => quote! {
+                ::topcoat::runtime::Expr::new(
+                    |_: ::topcoat::runtime::Event| {},
+                    ::std::string::String::from(#inner),
+                )
+            }
+            .to_tokens(tokens),
+        }
+    }
+}
+
+#[cfg(feature = "pretty")]
+impl topcoat_pretty::PrettyPrint for EventHandlerValue {
+    fn pretty_print(&self, printer: &mut topcoat_pretty::Printer<'_>) {
+        match self {
+            Self::Expr(inner) => inner.pretty_print(printer),
+            Self::LitStr(inner) => inner.pretty_print(printer),
+        }
+    }
+}
+
+/// An `@name=(expr)`, `@name=$(expr)`, or `@name="js"` attribute — a DOM event handler.
 pub struct EventHandler {
     pub at: Token![@],
     pub key: AttributeKey,
     pub eq: Token![=],
-    pub value: TemplateExpr,
+    pub value: EventHandlerValue,
 }
 
 impl WriteView for EventHandler {
     fn write(&self, writer: &mut ViewWriter) {
         let key = &self.key;
-        let expr = &self.value.expr;
+        let value = &self.value;
         writer.write_expr(
             ExprKind::Attributes,
             quote! {
                 ::topcoat::runtime::EventHandler::new(
                     #key,
-                    ::topcoat::runtime::expr! { #expr },
+                    #value,
                 )
             },
         );
