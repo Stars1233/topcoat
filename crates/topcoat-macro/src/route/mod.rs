@@ -1,4 +1,4 @@
-use proc_macro2::{Span, TokenStream};
+use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::{
     Ident, ItemFn, LitStr,
@@ -9,14 +9,23 @@ use syn::{
 use crate::handler_args::{HandlerArgs, request_ident};
 
 pub struct RouteAttr {
-    method: Option<Ident>,
+    method: Ident,
     path: Option<LitStr>,
 }
 
 impl Parse for RouteAttr {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Self {
-            method: input.peek(Ident).then(|| input.parse()).transpose()?,
+            method: input
+                .peek(Ident)
+                .then(|| input.parse())
+                .transpose()?
+                .ok_or_else(|| {
+                    syn::Error::new(
+                        input.span(),
+                        "route attributes must start with an HTTP method",
+                    )
+                })?,
             path: input.peek(LitStr).then(|| input.parse()).transpose()?,
         })
     }
@@ -65,9 +74,6 @@ impl ToTokens for Route {
             }
         });
 
-        let default_method = Ident::new("GET", Span::call_site());
-        let method = self.0.method.as_ref().unwrap_or(&default_method);
-
         let render = quote! {
             |cx, body| {
                 #item
@@ -79,22 +85,28 @@ impl ToTokens for Route {
         };
 
         match attr.path.as_ref() {
-            Some(path) => quote! {
-                #[allow(non_upper_case_globals)]
-                const #ident: ::topcoat::router::Route = ::topcoat::router::Route::new(
-                    ::topcoat::router::Method::#method,
-                    ::std::borrow::Cow::Borrowed(::topcoat::router::Path::new(#path)),
-                    #render,
-                );
-            },
-            None => quote! {
-                #[allow(non_upper_case_globals)]
-                const #ident: ::topcoat::router::ModuleRoute = ::topcoat::router::ModuleRoute::new(
-                    ::topcoat::router::Method::#method,
-                    module_path!(),
-                    #render,
-                );
-            },
+            Some(path) => {
+                let method = &attr.method;
+                quote! {
+                    #[allow(non_upper_case_globals)]
+                    const #ident: ::topcoat::router::Route = ::topcoat::router::Route::new(
+                        ::topcoat::router::Method::#method,
+                        ::std::borrow::Cow::Borrowed(::topcoat::router::Path::new(#path)),
+                        #render,
+                    );
+                }
+            }
+            None => {
+                let method = &attr.method;
+                quote! {
+                    #[allow(non_upper_case_globals)]
+                    const #ident: ::topcoat::router::ModuleRoute = ::topcoat::router::ModuleRoute::new(
+                        ::topcoat::router::Method::#method,
+                        module_path!(),
+                        #render,
+                    );
+                }
+            }
         }
         .to_tokens(tokens);
 

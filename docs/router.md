@@ -116,10 +116,10 @@ async fn create_post(Json(input): Json<CreatePost>) -> Result<Json<CreatePost>> 
 }
 ```
 
-The method is written before the path. If you omit the method, `GET` is used:
+The method is written before the path:
 
 ```rust
-#[route("/api/health")]
+#[route(GET "/api/health")]
 async fn health() -> Result<&'static str> {
     Ok("ok")
 }

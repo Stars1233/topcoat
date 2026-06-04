@@ -54,7 +54,7 @@ async fn about() -> Result {
 }
 ```
 
-A `#[route]` defines an API endpoint at the same module-derived path. The HTTP method is written in the attribute:
+API routes use `#[route]` with an explicit HTTP method. Like pages and layouts, method-only routes derive their URL from the module path:
 
 ```rust
 // src/app/api/posts.rs — POST /api/posts
@@ -75,7 +75,30 @@ async fn create_post(Json(input): Json<CreatePost>) -> Result<Json<CreatePost>> 
 }
 ```
 
+The method is required.
+
 Route functions can read a body with `Json<T>`, `Form<T>`, or any custom type that implements `FromRequest`. Their successful return value is converted with `IntoResponse`. See [Request and response bodies](./request_response.md).
+
+## Path overrides
+
+Module-derived paths and explicit paths can be mixed in the same route tree. `#[page]`, `#[layout]`, and `#[route]` all register into the same router in the end. If an attribute includes an explicit path, that path is used instead of the module-derived path for that item:
+
+```rust
+#[page("/")]
+async fn home() -> Result {
+    view! { <h1>"Home"</h1> }
+}
+
+#[layout("/admin")]
+async fn admin_layout(slot: Slot<'_>) -> Result {
+    view! { <main>(slot.await?)</main> }
+}
+
+#[route(GET "/api/health")]
+async fn health() -> Result<&'static str> {
+    Ok("ok")
+}
+```
 
 ## Renaming a static segment
 
