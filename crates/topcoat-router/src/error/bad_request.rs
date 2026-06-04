@@ -1,4 +1,5 @@
 use http::StatusCode;
+use serde_path_to_error::Path;
 
 use crate::Response;
 
@@ -30,13 +31,8 @@ pub fn bad_request(description: impl Into<String>) -> BadRequestError {
 ///
 /// This is useful for structured request formats where the parser can report
 /// the field or element that failed validation.
-pub fn bad_request_at(
-    path: impl std::fmt::Display,
-    description: impl Into<String>,
-) -> BadRequestError {
-    let path = path.to_string();
-    let description = description.into();
-    BadRequestError::new(Some(path), description)
+pub fn bad_request_at(path: impl Into<Path>, description: impl Into<String>) -> BadRequestError {
+    BadRequestError::new(Some(path.into()), description.into())
 }
 
 /// A bad-request response carried as the `Err` variant of a handler `Result`.
@@ -44,18 +40,18 @@ pub fn bad_request_at(
 /// Construct one with [`bad_request`].
 #[derive(Debug)]
 pub struct BadRequestError {
-    path: Option<String>,
+    path: Option<Path>,
     description: String,
 }
 
 impl BadRequestError {
-    fn new(path: Option<String>, description: String) -> Self {
+    fn new(path: Option<Path>, description: String) -> Self {
         Self { description, path }
     }
 
     /// Returns the path into the request where the error was encountered.
-    pub fn path(&self) -> Option<&str> {
-        self.path.as_deref()
+    pub fn path(&self) -> Option<&Path> {
+        self.path.as_ref()
     }
 
     /// Returns the client-safe description of what was wrong with the request.

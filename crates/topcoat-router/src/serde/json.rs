@@ -123,5 +123,5 @@ fn json_deserialization_error(error: serde_path_to_error::Error<serde_json::Erro
         }
     };
 
-    bad_request_at(error.path(), description).into()
+    bad_request_at(error.path().clone(), description).into()
 }
