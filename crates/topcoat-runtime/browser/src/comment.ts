@@ -13,7 +13,7 @@ export type CommentMarker =
 	  }
 	| { kind: "scope-end"; id: ReactiveScopeId };
 
-const SIGNAL_RE = /^\s*::topcoat::signal\("([^"]*)", (.*)\)\s*$/;
+const SIGNAL_RE = /^\s*::topcoat::signal\("([^"]*)", "([^"]*)"\)\s*$/;
 const SCOPE_START_RE =
 	/^\s*::topcoat::scope::start\(("[^"]+"), (\[[^\]]*\]), ("[^"]*")\)\s*$/;
 const SCOPE_END_RE = /^\s*::topcoat::scope::end\(("[^"]+")\)\s*$/;
@@ -24,8 +24,10 @@ export function parseComment(node: Comment): CommentMarker | null {
 	const sig = SIGNAL_RE.exec(text);
 	if (sig) {
 		const id = sig[1];
-		const valueExpr = JSON.parse(sig[2]);
-		const value = new Function("cx", `return ${valueExpr}`)(
+		const valueExpr = new DOMParser().parseFromString(sig[2], "text/html")
+			.documentElement.textContent;
+		console.log(valueExpr);
+		const value = new Function("cx", `return ${valueExpr};`)(
 			new Context(new SignalRegistry()),
 		);
 		return {

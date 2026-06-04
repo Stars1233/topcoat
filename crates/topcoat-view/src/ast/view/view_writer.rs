@@ -121,7 +121,7 @@ impl ViewWriter {
                         match chunk {
                             Chunk::Expr { kind, tokens } => {
                                 let helper = kind.helper();
-                                quote! { #helper(&mut __v, #tokens); }
+                                quote! { #helper(&mut __parts, #tokens); }
                             }
                             Chunk::Let { pat, expr } => {
                                 quote! { let #pat = #expr; }
@@ -178,9 +178,9 @@ impl ViewWriter {
 
                 quote! {{
                     use ::topcoat::view::internal::*;
-                    let mut __v = ::topcoat::view::ViewParts::new();
+                    let mut __parts = ::topcoat::view::ViewParts::new();
                     #statements
-                    ::topcoat::view::View::new(__v)
+                    ::topcoat::view::View::new(__parts)
                 }}
             }
         };

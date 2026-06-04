@@ -27,10 +27,7 @@ impl WriteView for BindAttribute {
         writer.write_expr(
             ExprKind::Attributes,
             quote! {
-                ::topcoat::runtime::BindAttribute::new(
-                    #key,
-                    ::topcoat::runtime::Expr::from(#value),
-                )
+                ::topcoat::runtime::BindAttribute::new(#key, #value)
             },
         );
     }
@@ -45,7 +42,7 @@ impl WriteAttribute for BindAttribute {
             quote! {
                 {
                     let __key = ::core::convert::Into::<::std::string::String>::into(#key);
-                    let (__evaluated, __js) = ::topcoat::runtime::Expr::from(#value).into_evaluated_and_js();
+                    let (__evaluated, __js) = #value.into_evaluated_and_js();
                     __attrs.insert(__key.clone(), __evaluated);
                     __attrs.insert(::std::format!("data-topcoat-bind:{}", __key), __js);
                 }

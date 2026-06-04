@@ -1,9 +1,8 @@
-use std::fmt::Write;
-
 use ref_cast::RefCast;
+use topcoat_view::runtime::ViewParts;
 
 use crate::runtime::{
-    Signal, Surrogated, ToJs, impl_surrogate, impl_surrogate_mut, impl_surrogate_ref,
+    JsViewParts, Signal, Surrogated, impl_surrogate, impl_surrogate_mut, impl_surrogate_ref,
 };
 
 #[derive(RefCast)]
@@ -48,9 +47,10 @@ impl_surrogate!({T} Signal<T>, WriteSignal<T>);
 impl_surrogate_ref!({T} Signal<T>, WriteSignal<T>);
 impl_surrogate_mut!({T} Signal<T>, WriteSignal<T>);
 
-impl<T> ToJs for &WriteSignal<T> {
-    fn to_js(&self, out: &mut String) {
-        let id = self.0.id();
-        let _ = write!(out, "cx.signal(\"{id}\")");
+impl<T> JsViewParts for &WriteSignal<T> {
+    fn to_view_parts(&self, parts: &mut ViewParts) {
+        parts.push("cx.signal(\"");
+        parts.push(self.0.id().to_string());
+        parts.push("\")");
     }
 }

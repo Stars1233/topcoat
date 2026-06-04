@@ -160,13 +160,13 @@ async fn combobox_content(cx: &Cx, input: ReadSignal<String>) -> Result {
 async fn combobox(content: Shard<(ReadSignal<String>,)>) -> Result {
     let kek = attributes! { pip="4" lel="5" };
     view! {
-        // signal input = "apple".to_owned();
+        signal input = "apple".to_owned();
         <div>
-            // <input
-            //     :value=$(input.get())
-            //     @input="(e) => console.log('kek')"
-            // >
-            // track content(input)
+            <input
+                :value=$(input.get())
+                @input="(e) => console.log('kek')"
+            >
+            track content(input)
 
 
         </div>

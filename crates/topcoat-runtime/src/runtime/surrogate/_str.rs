@@ -1,8 +1,7 @@
-use std::fmt::Write;
-
 use ref_cast::RefCast;
+use topcoat_view::runtime::{Unescaped, ViewParts};
 
-use crate::runtime::{ToJs, impl_surrogate_mut, impl_surrogate_ref};
+use crate::runtime::{JsViewParts, impl_surrogate_mut, impl_surrogate_ref};
 
 #[derive(Debug, RefCast)]
 #[repr(transparent)]
@@ -12,10 +11,13 @@ pub struct Str(str);
 impl_surrogate_ref!(str, Str);
 impl_surrogate_mut!(str, Str);
 
-impl ToJs for Str {
-    fn to_js(&self, out: &mut String) {
+impl JsViewParts for Str {
+    fn to_view_parts(&self, parts: &mut ViewParts) {
         let inner = &self.0;
-        let _ = write!(out, "cx.s.str({inner:?})");
+        let escaped = format!("{inner:?}");
+        parts.push(Unescaped::new_unchecked("cx.s.str("));
+        parts.push(escaped);
+        parts.push(Unescaped::new_unchecked(")"));
     }
 }
 

@@ -22,16 +22,6 @@ pub trait Surrogate {
     fn into_real(self) -> Self::Real;
 }
 
-pub trait ToJs {
-    fn to_js(&self, out: &mut std::string::String);
-}
-
-impl<T: ToJs + ?Sized> ToJs for &T {
-    fn to_js(&self, out: &mut std::string::String) {
-        <T as ToJs>::to_js(*self, out);
-    }
-}
-
 macro_rules! impl_surrogate {
     (
         $({$($g:tt)*})? $real:ty, $surrogate:ty

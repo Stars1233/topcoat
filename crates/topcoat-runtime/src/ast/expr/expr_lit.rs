@@ -1,11 +1,12 @@
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
-use std::fmt::Write;
 use syn::{ExprLit, Lit};
+use topcoat_core::context::Cx;
+use topcoat_view::runtime::{View, ViewParts};
 
 use crate::{
     ast::expr::Expr,
-    runtime::{Surrogated, ToJs},
+    runtime::{JsViewParts, Surrogated},
 };
 
 impl Expr {
@@ -14,22 +15,30 @@ impl Expr {
         rust: &mut TokenStream,
         js: &mut String,
     ) -> syn::Result<()> {
+        let mut parts = ViewParts::new();
+
         match &lit.lit {
             Lit::Float(inner) => {
                 quote! { ::topcoat::runtime::Surrogated::into_surrogate(#inner) }.to_tokens(rust);
                 let value: f64 = inner.base10_parse()?;
-                value.into_surrogate().to_js(js);
+                value.into_surrogate().to_view_parts(&mut parts);
             }
             Lit::Bool(inner) => {
                 quote! { ::topcoat::runtime::Surrogated::into_surrogate(#inner) }.to_tokens(rust);
-                write!(js, "{}", inner.value).unwrap();
+                // let value = inner.value;
+                // todo
+                // value.into_surrogate().to_view_parts(&mut parts);
             }
             Lit::Str(inner) => {
                 quote! { ::topcoat::runtime::Surrogated::into_surrogate(#inner) }.to_tokens(rust);
-                js.push_str(&serde_json::to_string(&inner.value()).unwrap());
+                let value = inner.value();
+                value.into_surrogate().to_view_parts(&mut parts);
             }
             other => return Err(syn::Error::new_spanned(other, "unsupported literal type")),
         }
+
+        *js += &View::new(parts).render(&Cx::empty());
+
         Ok(())
     }
 }

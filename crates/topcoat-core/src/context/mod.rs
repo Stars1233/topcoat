@@ -41,10 +41,17 @@ impl Cx {
         }
     }
 
+    #[inline]
+    pub fn empty() -> Self {
+        Self::new(Arc::new(State::new()), State::new())
+    }
+
+    #[inline]
     pub fn id(&self) -> CxId {
         self.id
     }
 
+    #[inline]
     #[doc(hidden)]
     pub fn cache(&self) -> &MemoizeCache {
         &self.cache

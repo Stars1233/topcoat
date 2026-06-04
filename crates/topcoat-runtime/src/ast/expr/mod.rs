@@ -14,7 +14,7 @@ mod pat;
 mod stmt;
 
 use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{ToTokens, quote};
 use syn::parse::{Parse, ParseStream};
 
 use crate::ast::expr::name_resolver::NameResolver;
@@ -49,40 +49,47 @@ impl Expr {
         // into the JavaScript source at runtime as `const` bindings, declared
         // ahead of the returned expression.
         let externals = names.externals();
-        let js_externals = externals.iter().enumerate().map(|(i, (ident, name))| {
-            let prefix = if i == 0 {
-                format!("(() => {{ const {name} = ")
-            } else {
-                format!("; const {name} = ")
-            };
-            quote! {
-                __js += #prefix;
-                ::topcoat::runtime::ToJs::to_js(&#ident, &mut __js);
+
+        if !externals.is_empty() {
+            let rust_externals = externals.iter().map(|(ident, _)| {
+                quote! { let #ident = ::topcoat::runtime::Surrogated::into_surrogate(#ident); }
+            });
+
+            let mut js_head = "(() => { const [".to_owned();
+            for (index, (_, name)) in externals.iter().enumerate() {
+                js_head += name;
+                if index < externals.len() - 1 {
+                    js_head += ", ";
+                }
             }
-        });
-        let rust_externals = externals.iter().map(|(ident, _)| {
-            quote! { let #ident = ::topcoat::runtime::Surrogated::into_surrogate(#ident); }
-        });
+            js_head += "] = [";
 
-        let js_head = if externals.is_empty() {
-            quote! { __js += "(() => {"; }
-        } else {
-            quote! { #(#js_externals)* }
-        };
-        let js_tail = if externals.is_empty() {
-            format!(" return {js}; }})()")
-        } else {
-            format!("; return {js}; }})()")
-        };
+            let mut js_externals = TokenStream::new();
+            for (index, (ident, _)) in externals.iter().enumerate() {
+                quote! { __js(&mut __parts, &#ident); }.to_tokens(&mut js_externals);
+                if index < externals.len() - 1 {
+                    quote! { __js_unescaped(&mut __parts, ", "); }.to_tokens(&mut js_externals);
+                }
+            }
 
-        Ok(quote! {{
-            #(#rust_externals)*
-            let mut __js = String::new();
-            #js_head
-            let __rust = #rust;
-            __js += #js_tail;
-            ::topcoat::runtime::Expr::new(__rust, __js)
-        }})
+            let js_tail = "]; return ".to_owned() + &js + "; })()";
+
+            Ok(quote! {{
+                use ::topcoat::runtime::internal::*;
+
+                #(#rust_externals)*
+                let mut __parts = ::topcoat::view::ViewParts::new();
+                __js_unescaped(&mut __parts, #js_head);
+                #js_externals
+                let __rust = #rust;
+                __js(&mut __parts, #js_tail);
+                ::topcoat::runtime::Expr::new(__rust, ::topcoat::view::ViewPart::from(__parts))
+            }})
+        } else {
+            Ok(quote! {
+                ::topcoat::runtime::Expr::new(#rust, ::topcoat::view::ViewPart::from(#js))
+            })
+        }
     }
 
     /// Lowers a single `syn::Expr` into a Rust value (`rust`) and the

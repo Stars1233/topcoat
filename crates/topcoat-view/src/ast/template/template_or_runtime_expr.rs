@@ -1,5 +1,5 @@
 use proc_macro2::TokenStream;
-use quote::ToTokens;
+use quote::{ToTokens, quote};
 use syn::parse::{Parse, ParseStream};
 
 use crate::ast::{
@@ -36,7 +36,9 @@ impl ParseOption for TemplateOrRuntimeExpr {
 impl ToTokens for TemplateOrRuntimeExpr {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         match self {
-            Self::Template(inner) => inner.to_tokens(tokens),
+            Self::Template(inner) => {
+                quote! { ::topcoat::runtime::Expr::from(#inner) }.to_tokens(tokens)
+            }
             Self::Runtime(inner) => inner.to_tokens(tokens),
         }
     }

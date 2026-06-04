@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use topcoat_view::runtime::{NodeViewParts, Unescaped, ViewParts};
 use uuid::Uuid;
 
-use crate::runtime::{Surrogated, ToJs};
+use crate::runtime::{JsViewParts, Surrogated};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(transparent)]
@@ -81,17 +81,15 @@ impl<'a, T> SignalDeclaration<'a, T> {
 impl<T> NodeViewParts for SignalDeclaration<'_, T>
 where
     for<'a> &'a T: Surrogated,
-    for<'a> <&'a T as Surrogated>::Surrogate: ToJs,
+    for<'a> <&'a T as Surrogated>::Surrogate: JsViewParts,
 {
     fn into_view_parts(self, parts: &mut ViewParts) {
         let id = self.0.id().to_string();
-        let mut js = String::new();
-        (&self.0.value).into_surrogate().to_js(&mut js);
         parts.push(Unescaped::new_unchecked("<!-- ::topcoat::signal("));
         parts.push(Unescaped::new_unchecked(format!("{id:?}")));
-        parts.push(Unescaped::new_unchecked(", "));
-        parts.push(Unescaped::new_unchecked(format!("{js:?}")));
-        parts.push(Unescaped::new_unchecked(") -->"));
+        parts.push(Unescaped::new_unchecked(", \""));
+        (&self.0.value).into_surrogate().to_view_parts(parts);
+        parts.push(Unescaped::new_unchecked("\") -->"));
     }
 }
 

@@ -1,8 +1,7 @@
-use std::fmt::Write;
-
 use ref_cast::RefCast;
+use topcoat_view::runtime::{Unescaped, ViewParts};
 
-use crate::runtime::{ToJs, impl_surrogate, impl_surrogate_mut, impl_surrogate_ref};
+use crate::runtime::{JsViewParts, impl_surrogate, impl_surrogate_mut, impl_surrogate_ref};
 
 #[derive(Debug, Clone, RefCast)]
 #[repr(transparent)]
@@ -20,10 +19,13 @@ impl_surrogate!(std::string::String, String);
 impl_surrogate_ref!(std::string::String, String);
 impl_surrogate_mut!(std::string::String, String);
 
-impl ToJs for String {
-    fn to_js(&self, out: &mut std::string::String) {
-        let inner = self.0.as_str();
-        let _ = write!(out, "cx.s.String({inner:?})");
+impl JsViewParts for String {
+    fn to_view_parts(&self, parts: &mut ViewParts) {
+        let inner = &self.0;
+        let escaped = format!("{inner:?}");
+        parts.push(Unescaped::new_unchecked("cx.s.String("));
+        parts.push(escaped);
+        parts.push(Unescaped::new_unchecked(")"));
     }
 }
 
