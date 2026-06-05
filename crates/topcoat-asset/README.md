@@ -32,6 +32,8 @@ Bundler::new("target/asset-cache")
 
 // Runtime: load the bundle and resolve IDs back to files.
 let bundle = AssetBundle::load_dir("dist/assets")?;
+// Or auto-detect a bundle in `<exe_dir>/assets` or `<cargo-target>/assets`:
+// let bundle = AssetBundle::load()?;
 let path = bundle.get(LOGO).unwrap().path();
 ```
 

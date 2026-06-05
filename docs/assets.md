@@ -50,24 +50,27 @@ aggressively.
 
 ## Loading the bundle
 
-The router must be given the bundle that was produced by the asset bundler:
+The router must be given the bundle that was produced by the asset bundler.
+`AssetBundle::load()` auto-detects the bundle by walking up from the current
+executable, picking up `<exe_dir>/assets/` (deployment) or `<cargo-target>/assets/`
+(`cargo run`, including cross-compilation and `examples/`):
 
 ```rust
-use std::path::PathBuf;
-
 use topcoat::asset::AssetBundle;
 
 mod app;
 
 #[tokio::main]
 async fn main() {
-    let router = app::router()
-        .assets(AssetBundle::load_dir(PathBuf::from("target/assets")).unwrap());
+    let router = app::router().assets(AssetBundle::load().unwrap());
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     topcoat::serve(listener, router).await.unwrap();
 }
 ```
+
+If the bundle lives somewhere else, use `AssetBundle::load_dir("path/to/assets")`
+instead.
 
 `Router::assets(...)` does two things:
 
@@ -127,6 +130,9 @@ topcoat asset bundle --out dist/assets
 let router = app::router()
     .assets(AssetBundle::load_dir("dist/assets").unwrap());
 ```
+
+When `--out` is not in one of the auto-detected locations, use `load_dir` to
+point at it explicitly.
 
 ## Path resolution
 
