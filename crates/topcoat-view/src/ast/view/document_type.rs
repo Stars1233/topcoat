@@ -57,3 +57,32 @@ impl topcoat_pretty::PrettyPrint for DocumentType {
         printer.scan_force_break();
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parse_err(source: &str) -> String {
+        match syn::parse_str::<DocumentType>(source) {
+            Ok(_) => panic!("expected parse error for `{source}`"),
+            Err(err) => err.to_string(),
+        }
+    }
+
+    #[test]
+    fn parses_doctype_html() {
+        syn::parse_str::<DocumentType>("<!DOCTYPE html>").unwrap();
+    }
+
+    #[test]
+    fn rejects_lowercase_doctype() {
+        // The HTML5 spec is case-insensitive, but the macro only accepts the
+        // canonical uppercase spelling.
+        assert!(parse_err("<!doctype html>").contains("expected `DOCTYPE`"));
+    }
+
+    #[test]
+    fn rejects_other_doctype_target() {
+        assert!(parse_err("<!DOCTYPE xml>").contains("expected `html`"));
+    }
+}

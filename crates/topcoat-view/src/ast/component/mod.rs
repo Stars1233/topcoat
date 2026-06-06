@@ -13,6 +13,9 @@ use syn::{
 
 use crate::ast::component::{ComponentAttr, ComponentItem};
 
+/// A parsed `#[component] async fn ...`. Expands into a unit struct named
+/// after the function that implements [`topcoat::view::Component`] and a
+/// `render` method that calls the original function body.
 pub struct Component {
     _attr: ComponentAttr,
     item: ComponentItem,

@@ -64,3 +64,39 @@ impl topcoat_pretty::PrettyPrint for Nodes {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use syn::parse::Parser;
+
+    fn parse(source: &str) -> Nodes {
+        syn::parse_str(source).unwrap()
+    }
+
+    #[test]
+    fn parses_empty_input() {
+        assert!(parse("").is_empty());
+    }
+
+    #[test]
+    fn collects_sibling_nodes_in_order() {
+        let nodes = parse(r#""a" (b) <span>"c"</span>"#);
+        assert_eq!(nodes.len(), 3);
+        assert!(matches!(nodes[0], Node::Text(_)));
+        assert!(matches!(nodes[1], Node::Expr(_)));
+        assert!(matches!(nodes[2], Node::Element(_)));
+    }
+
+    #[test]
+    fn stops_at_closing_tag_without_consuming_it() {
+        let parser = |input: syn::parse::ParseStream| -> syn::Result<(Nodes, ClosingTag)> {
+            let nodes = input.parse::<Nodes>()?;
+            let closing = input.parse::<ClosingTag>()?;
+            Ok((nodes, closing))
+        };
+        let (nodes, closing) = parser.parse_str(r#""a" "b" </div>"#).unwrap();
+        assert_eq!(nodes.len(), 2);
+        assert_eq!(closing.name.string_name().as_deref(), Some("div"));
+    }
+}

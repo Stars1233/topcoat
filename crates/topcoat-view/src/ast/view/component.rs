@@ -33,6 +33,8 @@ pub struct NamedArg {
     pub value: NamedArgValue,
 }
 
+/// The value of a [`NamedArg`]. Either a plain Rust expression or a `$(...)`
+/// runtime expression.
 pub enum NamedArgValue {
     Expr(Expr),
     Runtime(RuntimeExpr),

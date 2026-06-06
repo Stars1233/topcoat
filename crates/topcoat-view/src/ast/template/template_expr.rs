@@ -53,3 +53,38 @@ impl topcoat_pretty::PrettyPrint for TemplateExpr {
         ")".pretty_print(printer);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parse(source: &str) -> TemplateExpr {
+        syn::parse_str(source).unwrap()
+    }
+
+    #[test]
+    fn parses_plain_identifier() {
+        let expr = parse("(value)");
+        assert_eq!(expr.expr.to_token_stream().to_string(), "value");
+    }
+
+    #[test]
+    fn parses_complex_expression() {
+        let expr = parse("(a + b * c)");
+        assert_eq!(expr.expr.to_token_stream().to_string(), "a + b * c");
+    }
+
+    #[test]
+    fn parses_method_call() {
+        let expr = parse("(user.name.clone())");
+        assert_eq!(
+            expr.expr.to_token_stream().to_string(),
+            "user . name . clone ()",
+        );
+    }
+
+    #[test]
+    fn requires_parentheses() {
+        assert!(syn::parse_str::<TemplateExpr>("value").is_err());
+    }
+}
