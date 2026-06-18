@@ -4,12 +4,14 @@ mod map;
 mod prefix;
 mod private;
 mod signed;
+mod store;
 
-pub use jar::CookieJar;
-pub use map::Map;
-pub use prefix::{Prefix, Prefixed};
-pub use private::PrivateJar;
-pub use signed::SignedJar;
+pub use jar::*;
+pub use map::*;
+pub use prefix::*;
+pub use private::*;
+pub use signed::*;
+pub use store::*;
 
 use prefix::Conform;
 
@@ -386,6 +388,34 @@ mod tests {
         assert_eq!(set.len(), 1);
         assert!(set[0].starts_with("session="));
         assert!(set[0].contains("Max-Age=0"), "{}", set[0]);
+    }
+
+    #[test]
+    fn remove_replays_path_default_so_browser_matches() {
+        // A cookie written with `default_path` must be removed with the same
+        // Path, or the browser won't match and clear it.
+        let cx = cx_with(&["session=abc123"]);
+        cookies(&cx).default_path("/app").remove(("session", ""));
+
+        let set = &set_cookies(&cx)[0];
+        assert!(set.contains("Path=/app"), "{set}");
+        assert!(set.contains("Max-Age=0"), "{set}");
+    }
+
+    #[test]
+    fn remove_keeps_expiry_despite_max_age_default() {
+        // A `default_max_age` must not leak onto a removal: the jar still expires
+        // it with Max-Age=0.
+        let cx = cx_with(&["session=abc123"]);
+        cookies(&cx)
+            .default_max_age(time::Duration::hours(1))
+            .remove(("session", ""));
+
+        assert!(
+            set_cookies(&cx)[0].contains("Max-Age=0"),
+            "{:?}",
+            set_cookies(&cx)
+        );
     }
 
     #[test]
