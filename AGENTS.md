@@ -1,6 +1,6 @@
 # Agent instructions
 
-Before making code changes, ensure you have read `./STYLE.md`.
+Before making code or documentation changes, ensure you have read `./STYLE.md`.
 
 ## Project structure
 
