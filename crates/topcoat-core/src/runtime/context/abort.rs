@@ -15,7 +15,7 @@ pub enum MaybeAborted<T> {
     Aborted(Box<dyn Any>),
 }
 
-pub(crate) struct AbortStore {
+pub struct AbortStore {
     inner: Mutex<Option<Box<dyn Any + Send + Sync>>>,
 }
 
@@ -78,14 +78,14 @@ where
 }
 
 pub struct Abort<'a> {
-    cx: &'a Cx,
+    store: &'a AbortStore,
     value: Option<Box<dyn Any + Send + Sync>>,
 }
 
 impl<'a> Abort<'a> {
-    pub fn new(cx: &'a Cx, value: Box<dyn Any + Send + Sync>) -> Self {
+    pub fn new(store: &'a AbortStore, value: Box<dyn Any + Send + Sync>) -> Self {
         Self {
-            cx,
+            store,
             value: Some(value),
         }
     }
@@ -95,12 +95,12 @@ impl Future for Abort<'_> {
     type Output = Infallible;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        self.cx.abort.abort(self.value.take().unwrap());
+        self.store.abort(self.value.take().unwrap());
         cx.waker().wake_by_ref();
         Poll::Pending
     }
 }
 
-pub async fn abort(cx: &Cx, value: Box<dyn Any + Send + Sync>) -> ! {
-    match Abort::new(cx, value).await {}
+pub async fn abort(store: &AbortStore, value: Box<dyn Any + Send + Sync>) -> ! {
+    match Abort::new(store, value).await {}
 }
