@@ -5,10 +5,14 @@ use crate::runtime::{Unescaped, ViewPart, ViewParts};
 /// When this trait is implemented on a type, it can be used in the attribute key position of an
 /// element in the [`view!`](https://docs.rs/topcoat/latest/topcoat/view/macro.view.html) macro:
 ///
-/// ```rust,ignore
+/// ```rust
+/// # use topcoat::view::view;
+/// # async fn example() -> topcoat::Result {
+/// # let my_key = "data-state";
 /// view! {
 ///     <div (my_key)="value"></div>
 /// }
+/// # }
 /// ```
 pub trait AttributeKeyViewParts {
     /// Appends this attribute key to `parts`.
@@ -50,5 +54,15 @@ impl AttributeKeyViewParts for &String {
     #[inline]
     fn into_view_parts(self, parts: &mut ViewParts) {
         self.as_str().into_view_parts(parts);
+    }
+}
+
+impl<'b, T: ?Sized> AttributeKeyViewParts for &&'b T
+where
+    &'b T: AttributeKeyViewParts,
+{
+    #[inline]
+    fn into_view_parts(self, parts: &mut ViewParts) {
+        (*self).into_view_parts(parts)
     }
 }

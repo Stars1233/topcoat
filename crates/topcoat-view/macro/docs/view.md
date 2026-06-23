@@ -1,5 +1,3 @@
-# The [`view!`] macro
-
 The [`view!`] macro is Topcoat's HTML templating syntax. It tries to be unsurprising by staying close to real HTML instead of inventing a Rust-shaped HTML dialect.
 
 That means:
@@ -11,7 +9,10 @@ That means:
 - Rust keywords are still valid HTML attribute names, so `type="button"` and `for="email"` work as expected.
 - Literal text and literal attribute values are string literals.
 
-```rust,ignore
+```rust
+# use topcoat::{Result, view::*};
+# #[component]
+# async fn example() -> Result {
 view! {
     <!DOCTYPE html>
     <html>
@@ -26,66 +27,97 @@ view! {
         </body>
     </html>
 }
+# }
 ```
 
 Element names can use dashes, so custom elements fit naturally:
 
-```rust,ignore
+```rust
+# use topcoat::{Result, view::*};
+# #[component]
+# async fn example() -> Result {
 view! {
     <my-widget data-widget-id="profile"></my-widget>
 }
+# }
 ```
 
-## Rust Expressions
+# Rust Expressions
 
 Use parentheses to interpolate a Rust expression into markup.
 
 In child position, the expression becomes a node:
 
-```rust,ignore
+```rust
+# use topcoat::{Result, view::*};
+# struct User { name: &'static str }
+# #[component]
+# async fn example() -> Result {
+# let user = User { name: "Ada" };
+# let sidebar = view! { <aside></aside> }?;
 view! {
     <h1>"Hello, " (user.name) "!"</h1>
     (sidebar)
 }
+# }
 ```
 
 In attribute value position, the expression becomes the value:
 
-```rust,ignore
+```rust
+# use topcoat::{Result, view::*};
+# #[component]
+# async fn example() -> Result {
+# let url = "/posts";
+# let is_current = true;
 view! {
     <a href=(url) aria-current=(is_current)>"Open"</a>
 }
+# }
 ```
 
 The same parenthesized expression syntax can also be used for dynamic attribute names and dynamic element names:
 
-```rust,ignore
+```rust
+# use topcoat::{Result, view::*};
+# #[component]
+# async fn example() -> Result {
 let tag = "section";
 let attr = "data-state";
 
 view! {
     <(tag) (attr)="ready">"Loaded"</(tag)>
 }
+# }
 ```
 
 Literal text must be quoted because unquoted Rust identifiers are meaningful to the macro:
 
-```rust,ignore
+```rust
+# use topcoat::{Result, view::*};
+# #[component]
+# async fn example() -> Result {
+# let computed_text = "Computed";
 view! {
     <p>"This is text"</p>
     <p>(computed_text)</p>
 }
+# }
 ```
 
-## Control Flow
+# Control Flow
 
 Control flow in [`view!`] is Rust control flow with markup bodies. The macro lowers these constructs into ordinary Rust statements that append to the view being built.
 
-### `if`
+## `if`
 
 Use `if`, `else if`, and `else` to choose which markup is emitted.
 
-```rust,ignore
+```rust
+# use topcoat::{Result, view::*};
+# #[component]
+# async fn example() -> Result {
+# let user: Option<()> = None;
 view! {
     if user.is_some() {
         <a href="/account">"Account"</a>
@@ -93,11 +125,16 @@ view! {
         <a href="/login">"Sign in"</a>
     }
 }
+# }
 ```
 
 In attributes, each branch emits attributes instead of child nodes:
 
-```rust,ignore
+```rust
+# use topcoat::{Result, view::*};
+# #[component]
+# async fn example() -> Result {
+# let current = true;
 view! {
     <a
         href="/posts"
@@ -109,13 +146,19 @@ view! {
         "Posts"
     </a>
 }
+# }
 ```
 
-### `for`
+## `for`
 
 Use `for pat in expr { ... }` to render the body once for each item.
 
-```rust,ignore
+```rust
+# use topcoat::{Result, view::*};
+# struct Post { url: &'static str, title: &'static str }
+# #[component]
+# async fn example() -> Result {
+# let posts = vec![Post { url: "/a", title: "A" }];
 view! {
     <ul>
         for post in posts {
@@ -125,11 +168,16 @@ view! {
         }
     </ul>
 }
+# }
 ```
 
 In attributes, a loop can emit zero or more attributes. This is useful when you already have attributes represented as data:
 
-```rust,ignore
+```rust
+# use topcoat::{Result, view::*};
+# #[component]
+# async fn example() -> Result {
+# let attrs = vec![("data-id", "1")];
 view! {
     <div
         for (name, value) in attrs {
@@ -137,13 +185,20 @@ view! {
         }
     ></div>
 }
+# }
 ```
 
-### `match`
+## `match`
 
 Use `match` to choose markup from patterns. Match arms can also use guards.
 
-```rust,ignore
+```rust
+# use topcoat::{Result, view::*};
+# enum Status { Draft, Published { title: &'static str }, Archived }
+# #[component]
+# async fn example() -> Result {
+# let status = Status::Draft;
+# let show_archived = true;
 view! {
     match status {
         Status::Draft => <span>"Draft"</span>,
@@ -152,11 +207,17 @@ view! {
         _ => "",
     }
 }
+# }
 ```
 
 A match arm body is one view node. If a branch needs multiple sibling nodes, wrap them in a block:
 
-```rust,ignore
+```rust
+# use topcoat::{Result, view::*};
+# struct User { name: &'static str }
+# #[component]
+# async fn example() -> Result {
+# let user: Option<User> = None;
 view! {
     match user {
         Some(user) => {
@@ -166,11 +227,17 @@ view! {
         None => <a href="/login">"Sign in"</a>,
     }
 }
+# }
 ```
 
 In attributes, each arm emits one attribute node:
 
-```rust,ignore
+```rust
+# use topcoat::{Result, view::*};
+# enum State { Open, Closed }
+# #[component]
+# async fn example() -> Result {
+# let state = State::Open;
 view! {
     <article
         match state {
@@ -179,15 +246,21 @@ view! {
         }
     ></article>
 }
+# }
 ```
 
 For multiple conditional attributes, put the `if`, `for`, or `match` at the level where it can emit the attributes you need.
 
-### `let`
+## `let`
 
 Use `let pat = expr;` to bind values for later nodes in the same body.
 
-```rust,ignore
+```rust
+# use topcoat::{Result, view::*};
+# struct Post { title: &'static str, url: &'static str }
+# #[component]
+# async fn example() -> Result {
+# let post = Post { title: " Hello ", url: "/hello" };
 view! {
     <article>
         let title = post.title.trim();
@@ -196,11 +269,18 @@ view! {
         <a href=(post.url)>"Read"</a>
     </article>
 }
+# }
 ```
 
 The same works in an attribute list. The binding is in scope for attributes that follow it:
 
-```rust,ignore
+```rust
+# use topcoat::{Result, view::*};
+# struct Post { slug: &'static str, title: &'static str }
+# impl Post { fn url(&self) -> &str { "/hello" } }
+# #[component]
+# async fn example() -> Result {
+# let post = Post { slug: "hello", title: "Hello" };
 view! {
     <a
         let href = post.url();
@@ -210,13 +290,21 @@ view! {
         (post.title)
     </a>
 }
+# }
 ```
 
-## Components
+# Components
 
 Components are called inside [`view!`] with function-call syntax. Named arguments use `name: value`, and child nodes can be passed after the named arguments:
 
-```rust,ignore
+```rust
+# use topcoat::{Result, view::*};
+# #[component]
+# async fn panel(title: &str, child: View) -> Result { view! { <section>(title)(child)</section> } }
+# #[component]
+# async fn badge(label: &str, tone: &str) -> Result { view! { <span>(label)(tone)</span> } }
+# #[component]
+# async fn example() -> Result {
 view! {
     panel(
         title: "Profile",
@@ -227,19 +315,26 @@ view! {
         )
     )
 }
+# }
 ```
 
 All component parameters are named parameters, except `child`, which can be passed unnamed in the last position. Conceptually, those trailing child nodes are the same thing as a `child` parameter whose value is a [`view! { ... }`][`view!`] containing those nodes.
 
 See the [`component`] macro guide in [component.md](component.md) for defining components and passing child content.
 
-## Conditional Attributes
+# Conditional Attributes
 
 Expression attributes can remove themselves from the rendered markup.
 
 When an attribute value evaluates to [`false`], the whole attribute is omitted. When it evaluates to [`None`], the whole attribute is omitted. [`Some(value)`][`Some`] renders the attribute using the inner value.
 
-```rust,ignore
+```rust
+# use topcoat::{Result, view::*};
+# #[component]
+# async fn example() -> Result {
+# let is_disabled = false;
+# let is_current = true;
+# let maybe_title: Option<&str> = None;
 view! {
     <button
         disabled=(is_disabled)
@@ -249,11 +344,12 @@ view! {
         "Save"
     </button>
 }
+# }
 ```
 
 If the values are:
 
-```rust,ignore
+```rust
 let is_disabled = false;
 let is_current = true;
 let maybe_title: Option<&str> = None;
@@ -263,15 +359,19 @@ then the rendered opening tag includes `aria-current="page"`, but leaves out `di
 
 This omission logic applies to expression attributes. Literal attributes are always present:
 
-```rust,ignore
+```rust
+# use topcoat::{Result, view::*};
+# #[component]
+# async fn example() -> Result {
 view! {
     <button disabled="false">"Still disabled in HTML"</button>
 }
+# }
 ```
 
 For reusable runtime attribute collections, use the [`attributes!`] macro. The [attributes guide](attributes.md) covers the same attribute syntax and the [`topcoat::view::Attributes`] value that can be passed around and inserted into an element as an attribute fragment.
 
-## Custom Values In Markup
+# Custom Values In Markup
 
 The macro accepts dynamic Rust values by routing them through small runtime traits. Implement the trait for the position where your type should be accepted:
 
@@ -283,7 +383,10 @@ The macro accepts dynamic Rust values by routing them through small runtime trai
 
 For example, a type can opt into child-node rendering by implementing [`NodeViewParts`]:
 
-```rust,ignore
+```rust
+# use topcoat::{Result, view::*};
+# #[component]
+# async fn example() -> Result {
 use topcoat::view::{NodeViewParts, ViewParts};
 
 struct Badge(String);
@@ -297,11 +400,15 @@ impl NodeViewParts for Badge {
 view! {
     <p>(Badge("New".to_owned()))</p>
 }
+# }
 ```
 
 For attribute values, implement [`AttributeValueViewParts`]. Its [`attribute_present`][AttributeValueViewParts::attribute_present] method controls whether the containing attribute is rendered at all.
 
-```rust,ignore
+```rust
+# use topcoat::{Result, view::*};
+# #[component]
+# async fn example() -> Result {
 use topcoat::view::{AttributeValueViewParts, ViewParts};
 
 struct DataId(Option<String>);
@@ -321,18 +428,19 @@ impl AttributeValueViewParts for DataId {
 view! {
     <article data-id=(DataId(Some("post-1".to_owned())))></article>
 }
+# }
 ```
 
-[`AttributeKeyViewParts`]: https://docs.rs/topcoat/latest/topcoat/view/trait.AttributeKeyViewParts.html
-[`AttributeValueViewParts`]: https://docs.rs/topcoat/latest/topcoat/view/trait.AttributeValueViewParts.html
-[AttributeValueViewParts::attribute_present]: https://docs.rs/topcoat/latest/topcoat/view/trait.AttributeValueViewParts.html#tymethod.attribute_present
-[`AttributeViewParts`]: https://docs.rs/topcoat/latest/topcoat/view/trait.AttributeViewParts.html
-[`ElementNameViewParts`]: https://docs.rs/topcoat/latest/topcoat/view/trait.ElementNameViewParts.html
-[`NodeViewParts`]: https://docs.rs/topcoat/latest/topcoat/view/trait.NodeViewParts.html
-[`component`]: https://docs.rs/topcoat/latest/topcoat/view/attr.component.html
-[`attributes!`]: https://docs.rs/topcoat/latest/topcoat/view/macro.attributes.html
+[`AttributeKeyViewParts`]: trait.AttributeKeyViewParts.html
+[`AttributeValueViewParts`]: trait.AttributeValueViewParts.html
+[AttributeValueViewParts::attribute_present]: trait.AttributeValueViewParts.html#tymethod.attribute_present
+[`AttributeViewParts`]: trait.AttributeViewParts.html
+[`ElementNameViewParts`]: trait.ElementNameViewParts.html
+[`NodeViewParts`]: trait.NodeViewParts.html
+[`component`]: attr.component.html
+[`attributes!`]: macro.attributes.html
 [`false`]: https://doc.rust-lang.org/std/keyword.false.html
 [`None`]: https://doc.rust-lang.org/std/option/enum.Option.html#variant.None
 [`Some`]: https://doc.rust-lang.org/std/option/enum.Option.html#variant.Some
-[`topcoat::view::Attributes`]: https://docs.rs/topcoat/latest/topcoat/view/struct.Attributes.html
-[`view!`]: https://docs.rs/topcoat/latest/topcoat/view/macro.view.html
+[`topcoat::view::Attributes`]: struct.Attributes.html
+[`view!`]: macro.view.html

@@ -25,7 +25,8 @@ use quote::quote;
 ///
 /// Explicit path:
 ///
-/// ```ignore
+/// ```rust
+/// # use topcoat::{Result, router::page, view::view};
 /// #[page("/users/{id}")]
 /// async fn user_profile() -> Result {
 ///     view! { <h1>"User profile"</h1> }
@@ -34,7 +35,8 @@ use quote::quote;
 ///
 /// Module-derived path (in `src/app/about.rs` under `module_router!()`, this serves `/about`):
 ///
-/// ```ignore
+/// ```rust
+/// # use topcoat::{Result, router::page, view::view};
 /// #[page]
 /// async fn about() -> Result {
 ///     view! { <h1>"About"</h1> }
@@ -43,7 +45,11 @@ use quote::quote;
 ///
 /// Reading a request body:
 ///
-/// ```ignore
+/// ```rust
+/// # use topcoat::{Result, router::{Form, page}, view::view};
+/// # use serde::Deserialize;
+/// # #[derive(Deserialize)]
+/// # struct Search { q: String }
 /// #[page("/contact")]
 /// async fn contact(Form(input): Form<Search>) -> Result {
 ///     view! { <main>"searching for " (input.q)</main> }
@@ -75,8 +81,12 @@ pub fn page(attr: TokenStream, item: TokenStream) -> TokenStream {
 ///
 /// # Examples
 ///
-/// ```ignore
-/// use topcoat::{Result, router::{Slot, layout}, view::view};
+/// ```rust
+/// use topcoat::{
+///     Result,
+///     router::{Slot, layout},
+///     view::view,
+/// };
 ///
 /// #[layout("/")]
 /// async fn root_layout(slot: Slot<'_>) -> Result {
@@ -125,12 +135,17 @@ pub fn layout(attr: TokenStream, item: TokenStream) -> TokenStream {
 ///
 /// # Examples
 ///
-/// ```ignore
+/// ```rust
 /// use serde::{Deserialize, Serialize};
-/// use topcoat::{Result, router::{Json, route}};
+/// use topcoat::{
+///     Result,
+///     router::{Json, route},
+/// };
 ///
 /// #[derive(Deserialize, Serialize)]
-/// struct CreateUser { name: String }
+/// struct CreateUser {
+///     name: String,
+/// }
 ///
 /// #[route(POST "/api/users")]
 /// async fn create_user(Json(input): Json<CreateUser>) -> Result<Json<CreateUser>> {
@@ -166,7 +181,7 @@ pub fn route(attr: TokenStream, item: TokenStream) -> TokenStream {
 ///
 /// # Examples
 ///
-/// ```ignore
+/// ```rust
 /// use topcoat::{
 ///     Result,
 ///     context::Cx,
@@ -210,17 +225,17 @@ pub fn layer(attr: TokenStream, item: TokenStream) -> TokenStream {
 ///
 /// # Examples
 ///
-/// ```ignore
+/// ```rust
 /// // src/app/blog_post.rs — module URL becomes `/articles` instead of `/blog-post`.
 /// topcoat::router::segment!(rename = "articles");
 /// ```
 ///
-/// ```ignore
+/// ```rust
 /// // src/app/marketing/mod.rs — `marketing` contributes no URL segment.
 /// topcoat::router::segment!(kind = Group);
 /// ```
 ///
-/// ```ignore
+/// ```rust
 /// // src/app/_group/mod.rs — `_group` is reachable as `/group`.
 /// topcoat::router::segment!(kind = Static);
 /// ```
@@ -230,97 +245,7 @@ pub fn segment(tokens: TokenStream) -> TokenStream {
     quote! { #segment }.into()
 }
 
-/// Declares a typed view of a path parameter.
-///
-/// Apply this attribute to a tuple struct with a single unnamed field. The
-/// struct name, snake-cased, becomes the parameter's name; the inner type
-/// defines how the raw string is parsed.
-///
-/// # Pairing with the route's URL
-///
-/// `#[path_param]` only declares how to read a parameter — it does not by
-/// itself decide which URL segment carries that parameter. How the param
-/// gets into the URL depends on which router you use:
-///
-/// - **Module router** ([`module_router!`](../router/macro.module_router.html)) — the macro also
-///   emits a [`segment!`](macro@segment)`(kind = Param, rename = "...")` for the enclosing module.
-///   The module's URL segment is replaced by the parameter, so a `PostId` defined anywhere in
-///   module `app::posts::id` turns that module into `{post_id}` in the URL.
-///
-/// - **Regular [`Router`](../router/struct.Router.html)** — the page's path string is the source of
-///   truth. Include a matching parameter name in the [`#[page("...")]`](macro@page) path; the
-///   snake-cased struct name must equal the `{...}` placeholder for `of` to find the value. The
-///   [`segment!`](macro@segment) emitted by the macro is inert for this router.
-///
-/// # Reading the parameter
-///
-/// The macro generates an `of(cx: &Cx)` associated function whose return
-/// type depends on the inner type:
-///
-/// - **`&str`** — returns `&Self` directly with the borrowed segment value.
-/// - **Any other type** — returns `Result<&Self, &<T as FromStr>::Err>`, parsed via
-///   [`FromStr`](core::str::FromStr). Parsing is memoized per request, so repeated calls within a
-///   handler do not re-parse.
-///
-/// A [`Deref`](core::ops::Deref) impl to the inner type is also generated.
-///
-/// # Examples
-///
-/// ## Module router
-///
-/// ```ignore
-/// // src/app/posts/id/mod.rs — the `id` module becomes `{post_id}` in the URL.
-/// use topcoat::{
-///     context::Cx,
-///     Result,
-///     router::{RouterErrorExt, page, path_param},
-///     view::view,
-/// };
-///
-/// #[path_param]
-/// struct PostId(uuid::Uuid);
-///
-/// #[page]
-/// async fn post_page(cx: &Cx) -> Result {
-///     let post_id = PostId::of(cx).ok_or_redirect("/invalid-id")?;
-///     view! { "showing post with id: " (post_id.to_string()) }
-/// }
-/// ```
-///
-/// ## Regular router
-///
-/// ```ignore
-/// // The placeholder `{post_id}` matches the snake-cased struct name `PostId`.
-/// #[path_param]
-/// struct PostId(uuid::Uuid);
-///
-/// #[page("/posts/{post_id}")]
-/// async fn post_page(cx: &Cx) -> Result {
-///     let post_id = PostId::of(cx).ok_or_redirect("/invalid-id")?;
-///     view! { "showing post with id: " (post_id.to_string()) }
-/// }
-/// ```
-///
-/// ## Borrowed `&str` inner type
-///
-/// ```ignore
-/// // No parsing — the raw segment value is exposed directly.
-/// #[path_param]
-/// struct Slug<'a>(&'a str);
-///
-/// #[page]
-/// async fn show(cx: &Cx) -> Result {
-///     let slug = Slug::of(cx); // `&Slug<'_>`
-///     view! { "slug: " (&**slug) }
-/// }
-/// ```
-///
-/// # Requirements
-///
-/// - The item must be a tuple struct with exactly one unnamed field.
-/// - For non-`&str` inner types, the inner type must implement [`FromStr`](core::str::FromStr) and
-///   meet the requirements of [`#[memoize]`](macro@memoize) (the parsed `Result` must be `Send +
-///   Sync + 'static`).
+#[doc = include_str!("../docs/path_param.md")]
 #[proc_macro_attribute]
 pub fn path_param(attr: TokenStream, item: TokenStream) -> TokenStream {
     match topcoat_router::ast::path_param::PathParam::parse(attr.into(), item.into()) {
@@ -329,50 +254,7 @@ pub fn path_param(attr: TokenStream, item: TokenStream) -> TokenStream {
     }
 }
 
-/// Declares a typed view of the request's query string.
-///
-/// Apply this attribute to a struct with named fields. The macro derives
-/// [`serde::Deserialize`] on the struct and generates an `of(cx: &Cx)`
-/// associated function that parses the query string of whichever request
-/// `cx` belongs to, using [`serde_urlencoded`].
-///
-/// The same struct can be used from any handler — it is not tied to a
-/// particular route. `of` returns `Result<&Self, &serde_urlencoded::de::Error>`,
-/// and parsing is memoized per request so repeated calls within one handler
-/// share the same parse result.
-///
-/// # Examples
-///
-/// ```ignore
-/// use topcoat::{
-///     context::Cx,
-///     Result,
-///     router::{page, query_params},
-///     view::view,
-/// };
-///
-/// #[query_params]
-/// struct PageQuery {
-///     page: Option<u32>,
-/// }
-///
-/// #[page]
-/// async fn posts(cx: &Cx) -> Result {
-///     // For `/posts?page=2`, this yields `Some(2)`.
-///     let q = PageQuery::of(cx).unwrap();
-///     view! {
-///         <div>
-///             "currently on page: " (q.page)
-///         </div>
-///     }
-/// }
-/// ```
-///
-/// # Requirements
-///
-/// - The struct's fields must be deserializable by `serde_urlencoded` (use `Option<T>` for optional
-///   parameters, since `serde_urlencoded` does not apply `#[serde(default)]` automatically).
-/// - The struct must be `Send + Sync + 'static` to be memoized across the request.
+#[doc = include_str!("../docs/query_params.md")]
 #[proc_macro_attribute]
 pub fn query_params(attr: TokenStream, item: TokenStream) -> TokenStream {
     match topcoat_router::ast::query_params::QueryParams::parse(attr.into(), item.into()) {

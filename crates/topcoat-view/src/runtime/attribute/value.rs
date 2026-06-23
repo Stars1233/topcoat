@@ -5,10 +5,14 @@ use crate::runtime::{Unescaped, ViewPart, ViewParts};
 /// When this trait is implemented on a type, it can be used in the attribute value position of an
 /// element in the [`view!`](https://docs.rs/topcoat/latest/topcoat/view/macro.view.html) macro:
 ///
-/// ```rust,ignore
+/// ```rust
+/// # use topcoat::view::view;
+/// # async fn example() -> topcoat::Result {
+/// # let my_value = "primary";
 /// view! {
 ///     <div class=(my_value)></div>
 /// }
+/// # }
 /// ```
 ///
 /// For [boolean HTML attributes], a false value must be omitted from the markup entirely.
@@ -128,6 +132,21 @@ impl AttributeValueViewParts for &bool {
     #[inline]
     fn attribute_present(&self) -> bool {
         (*self).attribute_present()
+    }
+
+    #[inline]
+    fn into_view_parts(self, parts: &mut ViewParts) {
+        (*self).into_view_parts(parts)
+    }
+}
+
+impl<'b, T: ?Sized> AttributeValueViewParts for &&'b T
+where
+    &'b T: AttributeValueViewParts,
+{
+    #[inline]
+    fn attribute_present(&self) -> bool {
+        (**self).attribute_present()
     }
 
     #[inline]

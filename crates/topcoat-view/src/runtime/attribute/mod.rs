@@ -31,10 +31,14 @@ impl<K, V> Attribute<K, V> {
 /// When this trait is implemented on a type, it can be used in the attribute position of an element
 /// in the [`view!`](https://docs.rs/topcoat/latest/topcoat/view/macro.view.html) macro:
 ///
-/// ```rust,ignore
+/// ```rust
+/// # use topcoat::view::{Attributes, view};
+/// # async fn example() -> topcoat::Result {
+/// # let my_value = Attributes::new();
 /// view! {
 ///     <input (my_value)>
 /// }
+/// # }
 /// ```
 ///
 /// The emitted view parts must contain a leading space for each attribute to separate them from
@@ -89,5 +93,15 @@ where
         for value in self {
             value.into_view_parts(parts);
         }
+    }
+}
+
+impl<'b, T: ?Sized> AttributeViewParts for &&'b T
+where
+    &'b T: AttributeViewParts,
+{
+    #[inline]
+    fn into_view_parts(self, parts: &mut ViewParts) {
+        (*self).into_view_parts(parts)
     }
 }

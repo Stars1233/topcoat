@@ -4,13 +4,20 @@ Developers coming from other frameworks may be used to guarding API routes with 
 
 These functions can be called from anywhere in the component tree without coupling unrelated components together. For data fetching and other expensive work, use `#[memoize]` to deduplicate repeated calls to the same logic within a request.
 
-## What not to do
+# What not to do
 
-### Middleware
+## Middleware
 
 Middleware often pushes authentication away from the code that needs the authenticated user. The middleware authenticates the request and stores the user somewhere ambient, while the page assumes the middleware has already run.
 
 ```rust
+# struct Request { extensions: Extensions }
+# struct Extensions;
+# impl Extensions { fn insert<T>(&mut self, _v: T) {} fn get<T>(&self) -> Option<&T> { None } }
+# struct Html;
+# struct User;
+# async fn authenticate(_: &Request) -> User { User }
+# fn render_account(_: &User) -> Html { Html }
 async fn auth_middleware(request: &mut Request) {
     let user = authenticate(request).await;
     request.extensions.insert(user);
@@ -28,11 +35,15 @@ async fn account_page(request: &Request) -> Html {
 
 That can work, but it makes the page depend on configuration that lives somewhere else. If the middleware is missing or ordered incorrectly, the handler can panic. If a protected route is added without the middleware, it can accidentally expose data.
 
-### Extractors
+## Extractors
 
 Extractors avoid that hidden setup by putting the auth requirement in the handler signature:
 
 ```rust
+# struct Auth(User);
+# struct User;
+# struct Html;
+# fn render_account(_: User) -> Html { Html }
 async fn account_page(Auth(user): Auth) -> Html {
     render_account(user)
 }
@@ -41,15 +52,21 @@ async fn account_page(Auth(user): Auth) -> Html {
 This is more robust than middleware because the auth requirement is visible. The tradeoff is that every component below the page now needs to receive the user explicitly:
 
 ```rust
+# struct Auth(User);
+# #[derive(Clone)] struct User { avatar_url: u8 }
+# struct Html;
+# fn render(_: Html, _: Html) -> Html { Html }
+# async fn account_settings(_: User) -> Html { Html }
+# fn render_image(_: u8) -> Html { Html }
 async fn account_page(Auth(user): Auth) -> Html {
     render(
-        account_sidebar(user.clone()),
-        account_settings(user.clone()),
+        account_sidebar(user.clone()).await,
+        account_settings(user.clone()).await,
     )
 }
 
 async fn account_sidebar(user: User) -> Html {
-    user_avatar(user)
+    user_avatar(user).await
 }
 
 async fn user_avatar(user: User) -> Html {
@@ -59,7 +76,7 @@ async fn user_avatar(user: User) -> Html {
 
 That is fine for local data flow, but current-user state is usually ambient to the request. Passing it through every layout and component couples unrelated code just so a deeply nested component can ask a simple question.
 
-## What to do in Topcoat
+# What to do in Topcoat
 
 Write composable request functions instead. Each function adds one small piece of logic, accepts `&Cx`, and can be called from any page, layout, or component.
 
@@ -70,6 +87,12 @@ use topcoat::{
     Result,
 };
 
+# #[derive(Clone)] struct Db;
+# struct User;
+# struct FetchBuilder;
+# impl User { fn fetch_by_id(_: &str) -> FetchBuilder { FetchBuilder } }
+# impl FetchBuilder { async fn exec(self, _: Db) -> Option<User> { None } }
+#
 /// Returns the application database handle.
 fn db(cx: &Cx) -> Db {
     app_context::<Db>(cx).clone()
@@ -85,6 +108,7 @@ async fn fetch_user(cx: &Cx, user_id: &str) -> Option<User> {
 fn session_cookie(cx: &Cx) -> Option<&str> {
     let headers = headers(cx);
     // ... extract session cookie from HTTP headers
+    None
 }
 
 /// Resolves the current user from the session, if one exists.
@@ -110,6 +134,10 @@ use topcoat::{
     Result,
 };
 
+# use topcoat::router::UnauthorizedError;
+# struct User { avatar_url: &'static str, name: &'static str }
+# async fn require_auth(_: &Cx) -> Result<&User, UnauthorizedError> { Err(topcoat::router::unauthorized()) }
+#
 /// Renders the current user's avatar and requires authentication wherever it is used.
 #[component]
 async fn user_avatar(cx: &Cx) -> Result {
@@ -128,7 +156,7 @@ async fn user_avatar(cx: &Cx) -> Result {
 
 Because `fetch_user` is memoized, the database lookup runs at most once for the same user ID during a request. A layout can call `fetch_current_user(cx)` to render the nav, a page can call `require_auth(cx)` to protect private content, and a nested component can call `require_auth(cx)` again to render an avatar. The calls stay decoupled, while the expensive work is deduplicated.
 
-### Shape the functions by meaning
+## Shape the functions by meaning
 
 Use several focused helpers instead of one large auth function:
 
@@ -142,6 +170,11 @@ That keeps each function reusable. Public UI can call `fetch_current_user(cx)` a
 ```rust
 use topcoat::{context::Cx, router::RouterErrorExt, Result};
 
+# use topcoat::router::UnauthorizedError;
+# struct User;
+# impl User { fn is_admin(&self) -> bool { false } }
+# async fn require_auth(_: &Cx) -> Result<&User, UnauthorizedError> { Err(topcoat::router::unauthorized()) }
+#
 /// Returns the current user if they have admin permissions.
 async fn require_admin(cx: &Cx) -> Result<&User> {
     let user = require_auth(cx).await?;

@@ -9,9 +9,11 @@ use crate::runtime::{IntoResponse, Response};
 ///
 /// # Examples
 ///
-/// ```rust,ignore
-/// use topcoat::context::Cx;
+/// ```rust
+/// # struct User;
+/// # async fn session(_cx: &Cx) -> Option<User> { None }
 /// use topcoat::Result;
+/// use topcoat::context::Cx;
 /// use topcoat::router::unauthorized;
 ///
 /// async fn current_user(cx: &Cx) -> Result<User> {
