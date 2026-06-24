@@ -15,7 +15,7 @@ Every module-derived `#[page]`, `#[layout]`, `#[layer]`, and `#[route]` under `a
 
 # How modules map to routes
 
-Each module's path relative to the root module determines its URL. Module names are converted to **kebab-case** (`user_settings` becomes `user-settings`).
+Each module's path relative to the root module determines its URL. Module names are converted to **kebab-case** (e.g. `user_settings` becomes `user-settings`).
 
 | Module | Route |
 |---|---|

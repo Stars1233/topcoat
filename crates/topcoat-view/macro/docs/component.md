@@ -142,7 +142,6 @@ async fn current_path(cx: &Cx) -> Result {
 ```
 
 [`Cx`]: ../context/struct.Cx.html
-[`Props`]: derive.Props.html
 [`Result`]: ../type.Result.html
 [`View`]: struct.View.html
 [`component`]: attr.component.html
