@@ -533,6 +533,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
 
 [[package]]
+name = "font"
+version = "0.1.0"
+dependencies = [
+ "tokio",
+ "topcoat",
+]
+
+[[package]]
 name = "form_urlencoded"
 version = "1.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1753,6 +1761,10 @@ dependencies = [
  "topcoat-cookie",
  "topcoat-core",
  "topcoat-core-macro",
+ "topcoat-font",
+ "topcoat-font-fontsource",
+ "topcoat-font-fontsource-macro",
+ "topcoat-font-macro",
  "topcoat-htmx",
  "topcoat-router",
  "topcoat-router-macro",
@@ -1847,6 +1859,59 @@ dependencies = [
  "tokio",
  "topcoat",
  "topcoat-core",
+]
+
+[[package]]
+name = "topcoat-font"
+version = "0.1.0"
+dependencies = [
+ "inventory",
+ "proc-macro2",
+ "quote",
+ "syn",
+ "topcoat",
+ "topcoat-asset",
+ "topcoat-core",
+ "topcoat-pretty",
+ "topcoat-router",
+ "topcoat-view",
+]
+
+[[package]]
+name = "topcoat-font-fontsource"
+version = "0.1.0"
+dependencies = [
+ "heck",
+ "proc-macro2",
+ "quote",
+ "serde",
+ "serde_json",
+ "syn",
+ "topcoat-asset",
+ "topcoat-core",
+ "topcoat-font",
+ "ureq",
+]
+
+[[package]]
+name = "topcoat-font-fontsource-macro"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+ "topcoat",
+ "topcoat-font-fontsource",
+]
+
+[[package]]
+name = "topcoat-font-macro"
+version = "0.1.0"
+dependencies = [
+ "quote",
+ "syn",
+ "topcoat",
+ "topcoat-font",
 ]
 
 [[package]]

@@ -1,10 +1,9 @@
 mod asset;
 mod bundle;
-mod cursor;
 mod error;
-mod hash;
 mod manifest;
 mod options;
+mod resolver;
 mod source;
 
 pub use asset::*;
@@ -12,7 +11,10 @@ pub use bundle::*;
 pub use error::*;
 pub use manifest::*;
 pub use options::*;
+pub use resolver::*;
 pub use source::*;
+
+pub use topcoat_core::runtime::cursor::{ConstReader, ConstWriter};
 
 #[cfg(feature = "bundler")]
 mod bundler;
@@ -28,6 +30,3 @@ pub use router::*;
 
 #[cfg(feature = "view")]
 mod view;
-
-#[cfg(feature = "view")]
-pub use view::*;

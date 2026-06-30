@@ -3,12 +3,9 @@ use std::path::{Component, Path, PathBuf};
 use http::Uri;
 use memchr::memmem;
 use serde::{Deserialize, Serialize};
+use topcoat_core::runtime::fnv1a;
 
-use crate::{
-    AssetOptions, Source,
-    cursor::{ConstReader, ConstWriter},
-    hash,
-};
+use crate::{AssetOptions, ConstReader, ConstWriter, Source};
 
 /// Compact identifier for an asset declared via [`asset!`](crate::asset).
 ///
@@ -33,13 +30,22 @@ impl Asset {
         path: &str,
         options: &AssetOptions,
     ) -> Self {
-        let mut h = hash::fnv1a(crate_name.as_bytes());
-        h = hash::fnv1a_continue(h, b"\0");
-        h = hash::fnv1a_continue(h, source_file.as_bytes());
-        h = hash::fnv1a_continue(h, b"\0");
-        h = hash::fnv1a_continue(h, path.as_bytes());
+        let mut h = fnv1a::hash(crate_name.as_bytes());
+        h = fnv1a::hash_continue(h, b"\0");
+        h = fnv1a::hash_continue(h, source_file.as_bytes());
+        h = fnv1a::hash_continue(h, b"\0");
+        h = fnv1a::hash_continue(h, path.as_bytes());
         h = options.hash_into(h);
         Self(h)
+    }
+
+    /// The raw `u64` backing this ID.
+    ///
+    /// Useful for folding an asset into another content hash at compile time;
+    /// the value is the same one [`new`](Self::new) produces.
+    #[must_use]
+    pub const fn as_u64(self) -> u64 {
+        self.0
     }
 }
 
@@ -238,8 +244,8 @@ fn normalize(path: &Path) -> PathBuf {
 ///   differs. Recommended for remote assets.
 ///
 /// Output filenames always include a short content hash so bundles stay
-/// cache-friendly: e.g. `logo-1a2b3c4d.png`, or `1a2b3c4d.png` if the
-/// stem is empty.
+/// cache-friendly: e.g. `logo-1a2b3c4d5e6f7a8b.png`, or
+/// `1a2b3c4d5e6f7a8b.png` if the stem is empty.
 ///
 /// # Returns
 ///

@@ -7,6 +7,7 @@ edition = "2024"
 default = [
 	"asset",
 	"cookie",
+	"font",
 	"router",
 	"runtime",
 	"view",
@@ -15,16 +16,28 @@ default = [
 
 asset = [
 	"dep:topcoat-asset",
+	"topcoat-font?/asset",
+	"topcoat-font-fontsource?/asset",
 ]
 cookie = [
 	"dep:topcoat-cookie",
 ]
 discover = [
 	"dep:inventory",
+	"topcoat-font?/discover",
 	"topcoat-router?/discover",
 	"topcoat-router-macro?/discover",
 	"topcoat-runtime?/discover",
 	"topcoat-runtime-macro?/discover",
+]
+font = [
+	"dep:topcoat-font",
+	"dep:topcoat-font-macro",
+]
+font-fontsource = [
+	"font",
+	"dep:topcoat-font-fontsource",
+	"dep:topcoat-font-fontsource-macro",
 ]
 htmx = [
 	"dep:topcoat-htmx",
@@ -42,6 +55,7 @@ router = [
 	"view",
 	"topcoat-asset?/router",
 	"topcoat-cookie?/router",
+	"topcoat-font?/router",
 	"topcoat-runtime?/router",
 ]
 runtime = [
@@ -55,6 +69,7 @@ view = [
 	"dep:topcoat-view",
 	"dep:topcoat-view-macro",
 	"topcoat-asset?/view",
+	"topcoat-font?/view",
 ]
 
 # Declares this crate as a topcoat-ui component registry: `topcoat ui` reads the
@@ -68,6 +83,10 @@ topcoat-asset = { workspace = true, optional = true }
 topcoat-cookie = { workspace = true, optional = true }
 topcoat-core.workspace = true
 topcoat-core-macro.workspace = true
+topcoat-font = { workspace = true, optional = true }
+topcoat-font-macro = { workspace = true, optional = true }
+topcoat-font-fontsource = { workspace = true, optional = true }
+topcoat-font-fontsource-macro = { workspace = true, optional = true }
 topcoat-htmx = { workspace = true, optional = true }
 topcoat-router = { workspace = true, optional = true }
 topcoat-router-macro = { workspace = true, optional = true }
