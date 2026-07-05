@@ -74,6 +74,20 @@ view = [
 	"topcoat-font?/view",
 ]
 
+full = [
+	"asset",
+	"cookie",
+	"discover",
+	"font",
+	"font-fontsource",
+	"htmx",
+	"multipart",
+	"router",
+	"runtime",
+	"tailwind",
+	"view",
+]
+
 # Declares this crate as a topcoat-ui component registry: `topcoat ui` reads the
 # `registry.toml` (and component sources) under this directory, relative to the
 # crate root. A crate is usable as a registry only if it carries this key.
