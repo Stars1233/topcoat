@@ -37,13 +37,14 @@ median() {
     # are buffered so the columns can be padded to a common width; the raw
     # markdown then lines up when read as plain text, and still renders in any
     # markdown viewer.
-    headers=("Route" "Framework" "req/s (median)" "p50 ms" "p90 ms" "p99 ms" "bytes/resp" "success")
-    aligns=(l l r r r r r r)
+    headers=("Route" "Framework" "req/s (median)" "vs topcoat" "p50 ms" "p90 ms" "p99 ms" "bytes/resp" "success")
+    aligns=(l l r r r r r r r)
     rows=()
 
     for i in "${!ROUTE_LABELS[@]}"; do
         label="${ROUTE_LABELS[$i]}"
         path="${ROUTE_PATHS[$i]}"
+        base_rps=""
         for framework in topcoat nextjs leptos; do
             tput_files=("$RESULTS_DIR/${framework}_${label}_tput_"*.json)
             rate_files=("$RESULTS_DIR/${framework}_${label}_rate_"*.json)
@@ -62,8 +63,23 @@ median() {
                 echo "warning: $framework/$label saw status codes $codes" >&2
             fi
 
-            rows+=("$(printf '`%s`\t%s\t%s\t%s\t%s\t%s\t%s\t%s' \
-                "$path" "$framework" "$rps" "$p50" "$p90" "$p99" "$size" "$success")")
+            # Throughput relative to topcoat, the framework under test. Topcoat
+            # is the baseline; the others report how many times faster or slower
+            # they served this route (by req/s). "n/a" when topcoat is absent.
+            if [ "$framework" = topcoat ]; then
+                base_rps="$rps"
+                rel="baseline"
+            elif [ -n "$base_rps" ] && [ "$base_rps" -gt 0 ]; then
+                rel=$(awk -v a="$rps" -v b="$base_rps" 'BEGIN {
+                    if (a >= b) printf "%.2fx faster", a / b
+                    else printf "%.2fx slower", b / a
+                }')
+            else
+                rel="n/a"
+            fi
+
+            rows+=("$(printf '`%s`\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' \
+                "$path" "$framework" "$rps" "$rel" "$p50" "$p90" "$p99" "$size" "$success")")
         done
     done
 
