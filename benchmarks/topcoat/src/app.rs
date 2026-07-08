@@ -47,8 +47,6 @@ async fn root_layout(slot: Slot<'_>) -> Result {
 
 #[page]
 async fn home(cx: &Cx) -> Result {
-    let catalog = app_context::<Catalog>(cx);
-
     view! {
         <section class="rounded-2xl bg-indigo-600 px-8 py-16 text-white">
             <h1 class="max-w-2xl text-4xl font-bold tracking-tight">
@@ -75,7 +73,7 @@ async fn home(cx: &Cx) -> Result {
                 </a>
             </div>
             <div class="mt-6 grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
-                for product in catalog.featured() {
+                for product in app_context::<Catalog>(cx).featured() {
                     product_card(product: product)
                 }
             </div>
