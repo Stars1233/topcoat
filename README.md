@@ -121,6 +121,7 @@ view! { <link rel="stylesheet" href=(topcoat::tailwind::stylesheet!())> }
 **Asset system**
 - [Assets](https://github.com/tokio-rs/topcoat/blob/main/crates/topcoat/docs/asset.md): declare assets in Rust, serve them with content-hashed URLs.
 - [Fonts](https://github.com/tokio-rs/topcoat/blob/main/crates/topcoat/docs/font.md): bundle and serve web fonts.
+- [Icons](https://github.com/tokio-rs/topcoat/blob/main/crates/topcoat/docs/icon.md): download Iconify icon sets or declare your own.
 
 **Third-party integrations**
 - [Tailwind](https://github.com/tokio-rs/topcoat/blob/main/crates/topcoat/docs/tailwind.md): Tailwind CSS without Node, wired into the asset pipeline.
