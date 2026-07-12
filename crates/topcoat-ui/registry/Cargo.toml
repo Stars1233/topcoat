@@ -1,0 +1,21 @@
+[package]
+name = "topcoat-ui-registry"
+version = "0.1.0"
+edition = "2024"
+
+# Declares this crate as a topcoat-ui component registry: `topcoat ui` reads the
+# `registry.toml` (and the theme and component sources it names) under this
+# directory, relative to the crate root. A crate is usable as a registry only if
+# it carries this key.
+[package.metadata.topcoat-ui]
+registry = "."
+
+# `topcoat` is a dev-dependency, not a normal one: the `topcoat` facade pulls
+# this registry in under its `ui` feature, so a normal dependency back on
+# `topcoat` would form a cycle. As a dev-dependency it is available when the
+# component sources are compiled (under `cfg(test)`) without creating one.
+[dev-dependencies]
+topcoat.workspace = true
+
+[lints]
+workspace = true

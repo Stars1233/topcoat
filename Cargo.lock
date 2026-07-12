@@ -2587,6 +2587,7 @@ dependencies = [
  "topcoat-runtime",
  "topcoat-runtime-macro",
  "topcoat-tailwind",
+ "topcoat-ui-registry",
  "topcoat-view",
  "topcoat-view-macro",
  "uuid",
@@ -2936,6 +2937,13 @@ dependencies = [
  "sha2 0.11.0",
  "thiserror",
  "toml",
+ "topcoat",
+]
+
+[[package]]
+name = "topcoat-ui-registry"
+version = "0.1.0"
+dependencies = [
  "topcoat",
 ]
 
