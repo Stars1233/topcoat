@@ -194,7 +194,6 @@ impl AttributeValueViewParts for ViewPart {
         match self {
             Self::Empty | Self::Bool(false) => false,
             Self::BoxSlice { inner, .. } if inner.is_empty() => false,
-            Self::Vec { inner, .. } if inner.is_empty() => false,
             _ => true,
         }
     }

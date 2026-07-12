@@ -146,12 +146,6 @@ pub enum ViewPart {
         inner: Box<[ViewPart]>,
         size_hint: usize,
     },
-    /// A Vec of view parts rendered in order.
-    #[non_exhaustive]
-    Vec {
-        inner: Vec<ViewPart>,
-        size_hint: usize,
-    },
 }
 
 impl ViewPart {
@@ -240,11 +234,6 @@ impl ViewPart {
                     part.render(cx, f);
                 }
             }
-            Self::Vec { inner, .. } => {
-                for part in inner {
-                    part.render(cx, f);
-                }
-            }
         }
     }
 
@@ -285,9 +274,7 @@ impl ViewPart {
                 // Assume some characters escape into multi-byte sequences.
                 _ => value.len() + value.len() / 8,
             },
-            Self::BoxDyn { size_hint, .. }
-            | Self::BoxSlice { size_hint, .. }
-            | Self::Vec { size_hint, .. } => *size_hint,
+            Self::BoxDyn { size_hint, .. } | Self::BoxSlice { size_hint, .. } => *size_hint,
         }
     }
 }
@@ -371,8 +358,8 @@ impl From<ViewParts> for ViewPart {
             1 => value.items.pop().unwrap(),
             _ => {
                 let size_hint = value.items.iter().map(ViewPart::size_hint).sum();
-                ViewPart::Vec {
-                    inner: value.items.into_vec(),
+                ViewPart::BoxSlice {
+                    inner: value.items.into_boxed_slice(),
                     size_hint,
                 }
             }
