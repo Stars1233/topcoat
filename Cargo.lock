@@ -2972,6 +2972,7 @@ name = "topcoat-ui-registry"
 version = "0.0.1"
 dependencies = [
  "topcoat",
+ "topcoat-icon-iconify",
 ]
 
 [[package]]
