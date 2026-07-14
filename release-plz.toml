@@ -2,7 +2,7 @@
 git_release_draft = true
 pr_draft = true
 pr_labels = ["release"]
-release_always = false
+release_always = true
 
 # Skip cargo's pre-upload verification build. Several sub-crates carry a
 # dev-dependency on the `topcoat` facade (which in turn depends on them), so
