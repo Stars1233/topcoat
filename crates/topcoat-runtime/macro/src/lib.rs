@@ -1,6 +1,7 @@
 use proc_macro::TokenStream;
 use quote::quote;
 
+#[doc = include_str!("../docs/expr.md")]
 #[proc_macro]
 pub fn expr(tokens: TokenStream) -> TokenStream {
     let parsed = syn::parse_macro_input!(tokens as topcoat_runtime_grammar::expr::Expr);
@@ -10,6 +11,7 @@ pub fn expr(tokens: TokenStream) -> TokenStream {
     }
 }
 
+#[doc = include_str!("../docs/procedure.md")]
 #[proc_macro_attribute]
 pub fn procedure(attr: TokenStream, item: TokenStream) -> TokenStream {
     match topcoat_runtime_grammar::procedure::Procedure::parse(attr.into(), item.into()) {
@@ -18,6 +20,7 @@ pub fn procedure(attr: TokenStream, item: TokenStream) -> TokenStream {
     }
 }
 
+#[doc = include_str!("../docs/shard.md")]
 #[proc_macro_attribute]
 pub fn shard(attr: TokenStream, item: TokenStream) -> TokenStream {
     match topcoat_runtime_grammar::shard::Shard::parse(attr.into(), item.into()) {
